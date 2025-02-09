@@ -1,0 +1,56 @@
+---
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 90
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+UseTab: Always
+UseCRLF: false
+
+AlignAfterOpenBracket: BlockIndent
+# AlignArrayOfStructures: Left
+AlignConsecutiveMacros: AcrossEmptyLines
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: true
+
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllArgumentsOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+# AllowShortCaseExpressionOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AlwaysBreakBeforeMultilineStrings: true
+
+BinPackArguments: true
+BinPackParameters: false
+BreakAfterAttributes: Always
+BreakBeforeBraces: Attach
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+
+IncludeBlocks: Preserve
+IndentPPDirectives: AfterHash
+IndentWrappedFunctionNames: true
+
+MaxEmptyLinesToKeep: 1
+PointerAlignment: Right
+ReflowComments: true
+SeparateDefinitionBlocks: Always
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeInheritanceColon: true
+SortIncludes: CaseSensitive
+
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesBeforeTrailingComments: 1
+SpacesInLineCommentPrefix:
+    Minimum: 1
+    Maximum: -1
+
+# Penalties
+PenaltyBreakAssignment: 1000
+PenaltyReturnTypeOnItsOwnLine: 1000

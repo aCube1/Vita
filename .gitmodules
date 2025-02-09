@@ -1,0 +1,3 @@
+[submodule "ext/cglm"]
+	path = ext/cglm
+	url = git@github.com:recp/cglm.git
