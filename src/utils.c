@@ -37,3 +37,34 @@ void log_message(enum LogLevel level, const char *file, i32 line, const char *ms
 	fprintf(stderr, "\n");
 	va_end(args);
 }
+
+void slog_callback(
+	const char *tag,
+	u32 level,
+	u32 item,
+	const char *msg,
+	u32 line,
+	const char *file,
+	void *usrdata
+) {
+	(void)usrdata;
+
+	u32 loglevel;
+	switch (level) {
+	case 0: loglevel = LOGL_FATAL; break;
+	case 1: loglevel = LOGL_ERROR; break;
+	case 2: loglevel = LOGL_WARN; break;
+	default: loglevel = LOGL_INFO; break;
+	}
+
+	char log[1024];
+	u32 end = 0;
+
+	if (tag != NULL) {
+		end += sprintf(log + end, "[%s]", tag);
+	}
+	end += sprintf(log + end, "[%d]", item);
+	end += sprintf(log + end, " > %s", msg);
+
+	log_message(loglevel, file, line, log);
+}

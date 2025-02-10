@@ -5,12 +5,6 @@ project(
 	LANGUAGES C
 )
 
-# Valid options are:
-#	GLCORE - OpenGL 3.3+
-set(VT_GFX "GLCORE" CACHE STRING "Graphical backend driver.")
-set_property(CACHE VT_GFX PROPERTY STRINGS "GLCORE")
-
-
 include(cmake/base.cmake)
 include(cmake/libraries.cmake)
 include(cmake/warnings.cmake)
@@ -24,7 +18,6 @@ target_compile_features(
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
-		src/gpu/gl.c
 		src/gpu.c
 		src/main.c
 		src/utils.c
@@ -40,7 +33,6 @@ target_include_directories(
 target_compile_definitions(
 	${PROJECT_NAME} PRIVATE
 		$<$<CONFIG:Debug>:_DEBUG>
-		VT_GFX_${VT_GFX}
 )
 
 setup_libraries(${PROJECT_NAME})

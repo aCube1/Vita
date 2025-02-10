@@ -38,4 +38,14 @@ enum LogLevel {
 
 void log_message(enum LogLevel level, const char *file, i32 line, const char *msg, ...);
 
+void slog_callback(
+	const char *tag,
+	u32 level,
+	u32 item,
+	const char *msg,
+	u32 line,
+	const char *file,
+	void *usrdata
+);
+
 #endif

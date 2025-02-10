@@ -1,3 +1,4 @@
+#include "gpu.h"
 #include "utils.h"
 #include "window.h"
 #include <stdlib.h>
@@ -21,6 +22,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 		LOG_FATAL("[MAIN] > Failed to allocate AppState");
 		return SDL_APP_FAILURE;
 	}
+	*appstate = app;
 
 	if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO)) {
 		LOG_FATAL("[MAIN] > Failed to initialize SDL3 Subsystems");
@@ -33,30 +35,35 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 		return SDL_APP_FAILURE;
 	}
 
-	*appstate = app;
+	if (!vt_gpu_setup()) {
+		LOG_FATAL("[MAIN] > Unable to create gpu handler");
+		return SDL_APP_FAILURE;
+	}
+
 	return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
 	vtAppState *app = (vtAppState *)appstate;
 
-	(void)app;
-
+	if (vt_window_should_close(app->window)) {
+		return SDL_APP_SUCCESS;
+	}
 	return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 	vtAppState *app = (vtAppState *)appstate;
 	(void)app;
-
-	if (event->type == SDL_EVENT_QUIT) {
-		return SDL_APP_SUCCESS;
-	}
+	(void)event;
 
 	return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
+	if (appstate == NULL) {
+		return;
+	}
 	(void)result;
 
 	vtAppState *app = (vtAppState *)appstate;
@@ -65,5 +72,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 		vt_destroy_window(app->window);
 	}
 
+	vt_gpu_shutdown();
 	free(app);
 }
