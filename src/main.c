@@ -36,7 +36,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 	}
 
 	if (!vt_gpu_setup()) {
-		LOG_FATAL("[MAIN] > Unable to create gpu handler");
+		LOG_FATAL("[MAIN] > Unable to setup gpu handler");
 		return SDL_APP_FAILURE;
 	}
 
