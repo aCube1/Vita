@@ -3,8 +3,8 @@
 #include <SDL3/SDL_video.h>
 #include <string.h>
 
-#define SOKOL_GLCORE
 #define SOKOL_EXTERNAL_GL_LOADER
+#define SOKOL_GLCORE
 #define SOKOL_IMPL
 #include "sokol_gfx.h"
 
@@ -16,7 +16,17 @@ struct VT_GPU {
 	sg_shader common_shdr;
 };
 
-static struct VT_GPU _gpu = {0};
+static struct VT_GPU _gpu = { 0 };
+
+static const char _common_vs_source[] = {
+#embed "../assets/shaders/common.vert.glsl"
+	, '\0'
+};
+
+static const char _common_fs_source[] = {
+#embed "../assets/shaders/common.frag.glsl"
+	, '\0'
+};
 
 bool vt_gpu_setup(void) {
 	if (_gpu.was_init) {
@@ -36,7 +46,7 @@ bool vt_gpu_setup(void) {
 		GLAD_VERSION_MINOR(version)
 	);
 
-	sg_desc sgdesc = {0};
+	sg_desc sgdesc = { 0 };
 	sgdesc.logger.func = slog_callback;
 	sg_setup(&sgdesc);
 	if (!sg_isvalid()) {
@@ -53,6 +63,16 @@ void vt_gpu_shutdown(void) {
 		return;
 	}
 
+	if (sg_query_image_state(_gpu.white_img) != SG_RESOURCESTATE_INVALID) {
+		sg_destroy_image(_gpu.white_img);
+	}
+	if (sg_query_sampler_state(_gpu.nearest_smp) != SG_RESOURCESTATE_INVALID) {
+		sg_destroy_sampler(_gpu.nearest_smp);
+	}
+	if (sg_query_shader_state(_gpu.common_shdr) != SG_RESOURCESTATE_INVALID) {
+		sg_destroy_shader(_gpu.common_shdr);
+	}
+
 	if (sg_isvalid()) {
 		sg_shutdown();
 	}
@@ -65,9 +85,8 @@ sg_image vt_gpu_get_white_image(void) {
 		return _gpu.white_img;
 	}
 
-	u32 pixels[4] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
-
-	sg_image_desc imgdesc = {0};
+	u32 pixels[4] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
+	sg_image_desc imgdesc = { 0 };
 	imgdesc.width = 2;
 	imgdesc.height = 2;
 	imgdesc.pixel_format = SG_PIXELFORMAT_RGBA8;
@@ -88,7 +107,7 @@ sg_sampler vt_gpu_get_nearest_sampler(void) {
 		return _gpu.nearest_smp;
 	}
 
-	sg_sampler_desc smpdesc = {0};
+	sg_sampler_desc smpdesc = { 0 };
 	smpdesc.min_filter = SG_FILTER_NEAREST;
 	smpdesc.mag_filter = SG_FILTER_NEAREST;
 	smpdesc.mipmap_filter = SG_FILTER_NEAREST;
@@ -101,4 +120,55 @@ sg_sampler vt_gpu_get_nearest_sampler(void) {
 	}
 
 	return _gpu.nearest_smp;
+}
+
+sg_shader vt_gpu_get_common_shader(void) {
+	if (sg_query_shader_state(_gpu.common_shdr) == SG_RESOURCESTATE_VALID) {
+		return _gpu.common_shdr;
+	}
+
+	sg_shader_desc shdrdesc = {
+		.vertex_func.source = _common_vs_source,
+		.vertex_func.entry = "main",
+		.fragment_func.source = _common_fs_source,
+		.fragment_func.entry = "main",
+		.attrs[VT_GPU_ATTR_POS].glsl_name = "a_pos",
+		.attrs[VT_GPU_ATTR_UV].glsl_name = "a_uv",
+		.attrs[VT_GPU_ATTR_COLOR].glsl_name = "a_color",
+		.uniform_blocks[VT_GPU_UB_VERTEXPARAMS] = {
+			.stage = SG_SHADERSTAGE_VERTEX,
+			.layout = SG_UNIFORMLAYOUT_STD140,
+			.size = sizeof(VT_VertexParams),
+			.glsl_uniforms[0] = {
+				.type = SG_UNIFORMTYPE_MAT4,
+				.array_count = 1,
+				.glsl_name = "VT_VertexParams"
+			},
+		},
+		.images[0] = {
+			.stage = SG_SHADERSTAGE_FRAGMENT,
+			.image_type = SG_IMAGETYPE_2D,
+			.sample_type = SG_IMAGESAMPLETYPE_FLOAT,
+			.multisampled = false,
+		},
+		.samplers[0] = {
+			.stage = SG_SHADERSTAGE_FRAGMENT,
+			.sampler_type = SG_SAMPLERTYPE_FILTERING,
+		},
+		.image_sampler_pairs[VT_GPU_UB_TEX0] = {
+			.stage = SG_SHADERSTAGE_FRAGMENT,
+			.image_slot = 0,
+			.sampler_slot = 0,
+			.glsl_name = "u_tex0",
+		},
+		.label = "vt_gpu.common_shdr",
+	};
+
+	_gpu.common_shdr = sg_make_shader(&shdrdesc);
+	if (sg_query_shader_state(_gpu.common_shdr) != SG_RESOURCESTATE_VALID) {
+		_gpu.common_shdr.id = 0;
+		LOG_WARN("[GPU] > Failed to make common shader");
+	}
+
+	return _gpu.common_shdr;
 }
