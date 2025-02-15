@@ -18,7 +18,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 	(void)argv;
 
 	vtAppState *app = calloc(1, sizeof(vtAppState));
-	if (app == NULL) {
+	if (app == nullptr) {
 		LOG_FATAL("[MAIN] > Failed to allocate AppState");
 		return SDL_APP_FAILURE;
 	}
@@ -28,9 +28,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 		LOG_FATAL("[MAIN] > Failed to initialize SDL3 Subsystems");
 		return SDL_APP_FAILURE;
 	}
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	app->window = vt_create_window(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT, "Vitae");
-	if (app->window == NULL) {
+	if (app->window == nullptr) {
 		LOG_FATAL("[MAIN] > Unable to create primary window");
 		return SDL_APP_FAILURE;
 	}
@@ -61,14 +66,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-	if (appstate == NULL) {
+	if (appstate == nullptr) {
 		return;
 	}
 	(void)result;
 
 	vtAppState *app = (vtAppState *)appstate;
 
-	if (app->window != NULL) {
+	if (app->window != nullptr) {
 		vt_destroy_window(app->window);
 	}
 

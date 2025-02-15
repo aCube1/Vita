@@ -5,7 +5,7 @@ IndentWidth: 4
 TabWidth: 4
 ColumnLimit: 90
 ContinuationIndentWidth: 4
-Cpp11BracedListStyle: true
+Cpp11BracedListStyle: false
 UseTab: Always
 UseCRLF: false
 
@@ -39,7 +39,6 @@ MaxEmptyLinesToKeep: 1
 PointerAlignment: Right
 ReflowComments: true
 SeparateDefinitionBlocks: Always
-SpaceAfterTemplateKeyword: true
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeInheritanceColon: true
 SortIncludes: CaseSensitive
@@ -52,5 +51,5 @@ SpacesInLineCommentPrefix:
     Maximum: -1
 
 # Penalties
-PenaltyBreakAssignment: 1000
-PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyBreakAssignment: 100
+PenaltyReturnTypeOnItsOwnLine: 100
