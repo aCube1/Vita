@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "common.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -14,10 +14,10 @@ static const char *_log_color[] = {
 };
 
 void log_message(enum LogLevel level, const char *file, i32 line, const char *msg, ...) {
-	time_t timer = time(NULL);
+	time_t timer = time(nullptr);
 	struct tm *ltime = localtime(&timer);
 
-	char buf[16] = {0};
+	char buf[16] = { 0 };
 	buf[strftime(buf, 16, "%H:%M:%S", ltime)] = '\0';
 
 #ifdef _DEBUG
@@ -60,7 +60,7 @@ void slog_callback(
 	char log[1024];
 	u32 end = 0;
 
-	if (tag != NULL) {
+	if (tag != nullptr) {
 		end += sprintf(log + end, "[%s]", tag);
 	}
 	end += sprintf(log + end, "[%d]", item);

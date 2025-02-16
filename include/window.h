@@ -1,7 +1,7 @@
 #ifndef VT_WINDOW_H
 #define VT_WINDOW_H
 
-#include "utils.h"
+#include "common.h"
 #include <SDL3/SDL_video.h>
 
 typedef struct VT_Window VT_Window;

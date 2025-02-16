@@ -18,9 +18,9 @@ target_compile_features(
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
+		src/common.c
 		src/gpu.c
 		src/main.c
-		src/utils.c
 		src/window.c
 )
 

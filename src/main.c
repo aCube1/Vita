@@ -1,5 +1,5 @@
+#include "common.h"
 #include "gpu.h"
-#include "utils.h"
 #include "window.h"
 #include <stdlib.h>
 

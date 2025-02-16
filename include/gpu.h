@@ -2,8 +2,6 @@
 #define VT_GPU_H
 
 #include "cglm/types-struct.h"
-#include "utils.h"
-
 #include "sokol_gfx.h"
 #include <glad/gl.h>
 
