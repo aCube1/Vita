@@ -2,7 +2,7 @@
 #define VT_COMMON_H
 
 #include <assert.h>
-#include <stdbool.h>
+// #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -16,6 +16,14 @@
 #define LOG_ERROR(...) log_message(LOGL_ERROR, __FILE_NAME__, __LINE__, __VA_ARGS__)
 #define LOG_FATAL(...) log_message(LOGL_FATAL, __FILE_NAME__, __LINE__, __VA_ARGS__)
 
+enum LogLevel {
+	LOGL_DEBUG,
+	LOGL_INFO,
+	LOGL_WARN,
+	LOGL_ERROR,
+	LOGL_FATAL,
+};
+
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -28,13 +36,14 @@ typedef int64_t i64;
 
 typedef size_t usize;
 
-enum LogLevel {
-	LOGL_DEBUG,
-	LOGL_INFO,
-	LOGL_WARN,
-	LOGL_ERROR,
-	LOGL_FATAL,
-};
+typedef union irect {
+	u32 raw[4];
+
+	struct {
+		u32 x, y;
+		u32 w, h;
+	};
+} irect;
 
 void log_message(enum LogLevel level, const char *file, i32 line, const char *msg, ...);
 
