@@ -1,6 +1,7 @@
 #ifndef VT_WINDOW_H
 #define VT_WINDOW_H
 
+#include "cglm/types-struct.h"
 #include "common.h"
 #include <SDL3/SDL_video.h>
 
@@ -10,5 +11,8 @@ VT_Window *vt_create_window(i32 w, i32 h, const char *title);
 void vt_destroy_window(VT_Window *win);
 
 bool vt_window_should_close(const VT_Window *win);
+
+ivec2s vt_get_window_size(const VT_Window *win);
+ivec2s vt_get_window_framesize(const VT_Window *win);
 
 #endif

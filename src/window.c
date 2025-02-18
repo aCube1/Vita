@@ -44,7 +44,7 @@ VT_Window *vt_create_window(i32 w, i32 h, const char *title) {
 
 	VT_Window *win = calloc(1, sizeof(VT_Window));
 	if (win == nullptr) {
-		LOG_ERROR("[WINDOW] > Failed to allocate memory");
+		LOG_ERROR("[WINDOW] > Failed to alloc memory");
 		return nullptr;
 	}
 	win->size.x = w;
@@ -90,4 +90,14 @@ void vt_destroy_window(VT_Window *win) {
 bool vt_window_should_close(const VT_Window *win) {
 	assert(win != nullptr);
 	return win->should_close;
+}
+
+ivec2s vt_get_window_size(const VT_Window *win) {
+	assert(win != nullptr);
+	return win->size;
+}
+
+ivec2s vt_get_window_framesize(const VT_Window *win) {
+	assert(win != nullptr);
+	return win->framesize;
 }
