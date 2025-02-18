@@ -1,5 +1,6 @@
 #include "common.h"
 #include "gpu.h"
+#include "gpu/renderer.h"
 #include "window.h"
 #include <stdlib.h>
 
@@ -11,6 +12,7 @@
 
 typedef struct vtAppState {
 	VT_Window *window;
+	VT_Renderer *render;
 } vtAppState;
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
@@ -19,7 +21,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
 	vtAppState *app = calloc(1, sizeof(vtAppState));
 	if (app == nullptr) {
-		LOG_FATAL("[MAIN] > Failed to allocate AppState");
+		LOG_FATAL("[MAIN] > Failed to alloc AppState");
 		return SDL_APP_FAILURE;
 	}
 	*appstate = app;
@@ -45,11 +47,21 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 		return SDL_APP_FAILURE;
 	}
 
+	app->render = vt_create_renderer();
+	if (app->render == nullptr) {
+		LOG_FATAL("[MAIN] > Unable to create main 2D renderer");
+		return SDL_APP_FAILURE;
+	}
+
 	return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
 	vtAppState *app = (vtAppState *)appstate;
+
+	vt_render_begin(app->render, vt_get_window_framesize(app->window));
+
+	vt_render_end(app->render);
 
 	if (vt_window_should_close(app->window)) {
 		return SDL_APP_SUCCESS;
@@ -75,6 +87,10 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 
 	if (app->window != nullptr) {
 		vt_destroy_window(app->window);
+	}
+
+	if (app->render != nullptr) {
+		vt_destroy_renderer(app->render);
 	}
 
 	vt_gpu_shutdown();

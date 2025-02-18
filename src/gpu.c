@@ -96,8 +96,9 @@ sg_image vt_gpu_get_white_image(void) {
 
 	_gpu.white_img = sg_make_image(&imgdesc);
 	if (sg_query_image_state(_gpu.white_img) != SG_RESOURCESTATE_VALID) {
-		_gpu.white_img.id = 0;
 		LOG_WARN("[GPU] > Failed to make default white image");
+		sg_destroy_image(_gpu.white_img);
+		_gpu.white_img.id = SG_INVALID_ID;
 	}
 
 	return _gpu.white_img;
@@ -116,8 +117,9 @@ sg_sampler vt_gpu_get_nearest_sampler(void) {
 
 	_gpu.nearest_smp = sg_make_sampler(&smpdesc);
 	if (sg_query_sampler_state(_gpu.nearest_smp) != SG_RESOURCESTATE_VALID) {
-		_gpu.nearest_smp.id = 0;
 		LOG_WARN("[GPU] > Failed to make default nearest sampler");
+		sg_destroy_sampler(_gpu.nearest_smp);
+		_gpu.nearest_smp.id = SG_INVALID_ID;
 	}
 
 	return _gpu.nearest_smp;
@@ -167,9 +169,49 @@ sg_shader vt_gpu_get_common_shader(void) {
 
 	_gpu.common_shdr = sg_make_shader(&shdrdesc);
 	if (sg_query_shader_state(_gpu.common_shdr) != SG_RESOURCESTATE_VALID) {
-		_gpu.common_shdr.id = 0;
 		LOG_WARN("[GPU] > Failed to make common shader");
+		sg_destroy_shader(_gpu.common_shdr);
+		_gpu.common_shdr.id = SG_INVALID_ID;
 	}
 
 	return _gpu.common_shdr;
+}
+
+sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primtype) {
+	sg_primitive_type primitive_type;
+	switch (primtype) {
+	case VT_PRIMITIVETYPE_POINTS: primitive_type = SG_PRIMITIVETYPE_POINTS; break;
+	case VT_PRIMITIVETYPE_LINES: primitive_type = SG_PRIMITIVETYPE_LINES; break;
+	case VT_PRIMITIVETYPE_TRIANGLES:
+	default: primitive_type = SG_PRIMITIVETYPE_TRIANGLES; break;
+	}
+
+	sg_pipeline_desc pipdesc = {
+		.shader = shdr,
+		.layout = {
+			.buffers[0].stride = sizeof(VT_Vertex),
+			.attrs[VT_GPU_ATTR_POS] = {
+				.offset = offsetof(VT_Vertex, position),
+				.format = SG_VERTEXFORMAT_FLOAT2,
+			},
+			.attrs[VT_GPU_ATTR_UV] = {
+				.offset = offsetof(VT_Vertex, texcoord),
+				.format = SG_VERTEXFORMAT_FLOAT2,
+			},
+			.attrs[VT_GPU_ATTR_COLOR] = {
+				.offset = offsetof(VT_Vertex, color),
+				.format = SG_VERTEXFORMAT_UBYTE4N,
+			},
+		},
+		.primitive_type = primitive_type,
+		.label = "vt_gpu.pipeline",
+	};
+
+	sg_pipeline pip = sg_make_pipeline(&pipdesc);
+	if (sg_query_pipeline_state(pip) != SG_RESOURCESTATE_VALID) {
+		sg_destroy_pipeline(pip);
+		pip.id = SG_INVALID_ID;
+	}
+
+	return pip;
 }
