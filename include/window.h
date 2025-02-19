@@ -10,6 +10,8 @@ typedef struct VT_Window VT_Window;
 VT_Window *vt_create_window(i32 w, i32 h, const char *title);
 void vt_destroy_window(VT_Window *win);
 
+void vt_window_update(VT_Window *win);
+
 bool vt_window_should_close(const VT_Window *win);
 
 ivec2s vt_get_window_size(const VT_Window *win);

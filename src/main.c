@@ -60,8 +60,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	vtAppState *app = (vtAppState *)appstate;
 
 	vt_render_begin(app->render, vt_get_window_framesize(app->window));
-
 	vt_render_end(app->render);
+	vt_window_update(app->window);
 
 	if (vt_window_should_close(app->window)) {
 		return SDL_APP_SUCCESS;

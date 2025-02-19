@@ -1,6 +1,7 @@
 #include "window.h"
 
 #include "cglm/types-struct.h"
+#include "sokol_gfx.h"
 #include <SDL3/SDL_events.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -85,6 +86,12 @@ void vt_destroy_window(VT_Window *win) {
 
 	free(win);
 	_primary_window = nullptr;
+}
+
+void vt_window_update(VT_Window *win) {
+	assert(win != nullptr);
+	sg_commit();
+	SDL_GL_SwapWindow(win->handle);
 }
 
 bool vt_window_should_close(const VT_Window *win) {
