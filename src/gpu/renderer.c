@@ -162,6 +162,7 @@ void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
 
 	if (render->cur_state >= _VT_MAX_STACK_DEPTH) {
 		LOG_WARN("[RENDER] > State's stack has overflow");
+		render->has_error = true;
 		return;
 	}
 	render->has_error = false;
@@ -182,6 +183,13 @@ void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
 	render->state.uniform = nullptr;
 	render->state._base_vertex = render->cur_vertex;
 	render->state._base_command = render->cur_command;
+
+	render->state.render_pass = (sg_pass) {
+		.action = {
+			.colors[0].clear_value = { 0.25, 0.25, 0.25, 1.0},
+		},
+		.label = "vt_gpu.render_pass",
+	};
 }
 
 void vt_render_end(VT_Renderer *render) {
@@ -189,6 +197,7 @@ void vt_render_end(VT_Renderer *render) {
 
 	if (render->cur_state <= 0) {
 		LOG_WARN("[RENDER] > State's stack underflow");
+		render->has_error = true;
 		return;
 	}
 
@@ -275,6 +284,9 @@ void vt_render_flush(VT_Renderer *render) {
 	u32 cur_pipeline = SG_INVALID_ID;
 	u32 cur_uniform = UINT32_MAX;
 
+	// Begin state render pass before drawing
+	sg_begin_pass(&render->state.render_pass);
+
 	// Flush all commands
 	for (u32 i = render->state._base_command; i < end_cmd; i += 1) {
 		VT_RenderCommand *cmd = &render->commands[i];
@@ -296,7 +308,7 @@ void vt_render_flush(VT_Renderer *render) {
 
 			_vt_flush_draw(render, draw, &binds, &cur_pipeline, &cur_uniform);
 		} break;
-		case _VT_COMMANDTYPE_NONE: break; // Nothing to do on this command
 		}
 	}
+	sg_end_pass();
 }

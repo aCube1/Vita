@@ -12,6 +12,7 @@ typedef struct VT_RenderState {
 	mat3s transform;
 	u8color color;
 	sg_pipeline pipeline;
+	sg_pass render_pass;
 	VT_UniformData *uniform;
 
 	u32 _base_vertex;
