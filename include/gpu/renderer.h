@@ -28,4 +28,6 @@ void vt_render_begin(VT_Renderer *render, ivec2s framesize);
 void vt_render_end(VT_Renderer *render);
 void vt_render_flush(VT_Renderer *render);
 
+void vt_render_draw(VT_Renderer *render, const VT_Vertex *vertices, u32 count);
+
 #endif

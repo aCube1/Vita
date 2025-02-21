@@ -3,7 +3,6 @@
 
 #include "cglm/types-struct.h"
 #include "common.h"
-#include <SDL3/SDL_video.h>
 
 typedef struct VT_Window VT_Window;
 

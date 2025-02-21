@@ -4,95 +4,92 @@
 #include "window.h"
 #include <stdlib.h>
 
-#define SDL_MAIN_USE_CALLBACKS
-#include <SDL3/SDL_main.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 #define WINDOW_DEFAULT_WIDTH  960
 #define WINDOW_DEFAULT_HEIGHT 540
 
-typedef struct vtAppState {
+typedef enum VT_AppStatus {
+	VT_APP_FAILURE,
+	VT_APP_SUCCESS,
+	VT_APP_CONTINUE,
+} VT_AppStatus;
+
+typedef struct VT_AppState {
 	VT_Window *window;
 	VT_Renderer *render;
-} vtAppState;
 
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
-	(void)argc;
-	(void)argv;
+	VT_AppStatus status;
+} VT_AppState;
 
-	vtAppState *app = calloc(1, sizeof(vtAppState));
-	if (app == nullptr) {
-		LOG_FATAL("[MAIN] > Failed to alloc AppState");
-		return SDL_APP_FAILURE;
+static void _vt_glfw_err_callback(i32 err, const char *desc) {
+	LOG_ERROR("[VT] > GLFW Error - (%d) %s", err, desc);
+}
+
+static VT_AppStatus _vt_init(VT_AppState *app) {
+	if (!glfwInit()) {
+		LOG_FATAL("[VT] > Failed to initialize GLFW library");
+		return VT_APP_FAILURE;
 	}
-	*appstate = app;
 
-	if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO)) {
-		LOG_FATAL("[MAIN] > Failed to initialize SDL3 Subsystems");
-		return SDL_APP_FAILURE;
-	}
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-	app->window = vt_create_window(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT, "Vitae");
-	if (app->window == nullptr) {
-		LOG_FATAL("[MAIN] > Unable to create primary window");
-		return SDL_APP_FAILURE;
+	app->window = vt_create_window(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT, "Vita");
+	if (!app->window) {
+		LOG_FATAL("[VT] > Unable to create primary window");
+		return VT_APP_FAILURE;
 	}
 
 	if (!vt_gpu_setup()) {
-		LOG_FATAL("[MAIN] > Unable to setup gpu handler");
-		return SDL_APP_FAILURE;
+		LOG_FATAL("[VT] > Unable to setup GPU handler");
+		return VT_APP_FAILURE;
 	}
 
 	app->render = vt_create_renderer();
-	if (app->render == nullptr) {
-		LOG_FATAL("[MAIN] > Unable to create main 2D renderer");
-		return SDL_APP_FAILURE;
+	if (!app->render) {
+		LOG_FATAL("[VT] > Unable to create main 2D renderer");
+		return VT_APP_FAILURE;
 	}
 
-	return SDL_APP_CONTINUE;
+	return VT_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppIterate(void *appstate) {
-	vtAppState *app = (vtAppState *)appstate;
+static void _vt_quit(VT_AppState *app) {
+	if (app->window) {
+		vt_destroy_window(app->window);
+	}
+	if (app->render) {
+		vt_destroy_renderer(app->render);
+	}
 
+	vt_gpu_shutdown();
+	glfwTerminate();
+}
+
+static VT_AppStatus _vt_iterate(VT_AppState *app) {
 	vt_render_begin(app->render, vt_get_window_framesize(app->window));
 	vt_render_end(app->render);
 	vt_window_update(app->window);
 
 	if (vt_window_should_close(app->window)) {
-		return SDL_APP_SUCCESS;
+		return VT_APP_SUCCESS;
 	}
-	return SDL_APP_CONTINUE;
+	return VT_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-	vtAppState *app = (vtAppState *)appstate;
-	(void)app;
-	(void)event;
+int main(void) {
+	glfwSetErrorCallback(_vt_glfw_err_callback);
 
-	return SDL_APP_CONTINUE;
-}
+	VT_AppState app = {};
+	app.status = _vt_init(&app);
 
-void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-	if (appstate == nullptr) {
-		return;
+	while (app.status == VT_APP_CONTINUE) {
+		app.status = _vt_iterate(&app);
 	}
-	(void)result;
+	_vt_quit(&app);
 
-	vtAppState *app = (vtAppState *)appstate;
-
-	if (app->window != nullptr) {
-		vt_destroy_window(app->window);
+	if (app.status == VT_APP_FAILURE) {
+		LOG_FATAL("[VT] > App exited with a critical failure");
+		return EXIT_FAILURE;
 	}
-
-	if (app->render != nullptr) {
-		vt_destroy_renderer(app->render);
-	}
-
-	vt_gpu_shutdown();
-	free(app);
+	return EXIT_SUCCESS;
 }

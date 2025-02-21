@@ -2,13 +2,12 @@
 
 #include "cglm/types-struct.h"
 #include "sokol_gfx.h"
-#include <SDL3/SDL_events.h>
+#include <GLFW/glfw3.h>
 #include <assert.h>
 #include <stdlib.h>
 
 typedef struct VT_Window {
-	SDL_Window *handle;
-	SDL_GLContext glctx;
+	GLFWwindow *handle;
 
 	ivec2s size;
 	ivec2s framesize;
@@ -17,34 +16,32 @@ typedef struct VT_Window {
 
 static VT_Window *_primary_window = nullptr;
 
-bool _vt_window_event(void *usrdata, SDL_Event *event) {
-	VT_Window *win = usrdata;
-	switch (event->type) {
-	case SDL_EVENT_WINDOW_RESIZED:
-		win->size.x = event->window.data1;
-		win->size.y = event->window.data2;
-		break;
-	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-		win->framesize.x = event->window.data1;
-		win->framesize.y = event->window.data2;
-		break;
-	}
+static void _vt_window_close_callback(GLFWwindow *handle) {
+	VT_Window *win = glfwGetWindowUserPointer(handle);
 
-	if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-		win->should_close = true;
-	}
+	win->should_close = true;
+}
 
-	return true;
+static void _vt_window_size_callback(GLFWwindow *handle, i32 w, i32 h) {
+	VT_Window *win = glfwGetWindowUserPointer(handle);
+	win->size.x = w;
+	win->size.y = h;
+}
+
+static void _vt_framebuffer_size_callback(GLFWwindow *handle, i32 w, i32 h) {
+	VT_Window *win = glfwGetWindowUserPointer(handle);
+	win->framesize.x = w;
+	win->framesize.y = h;
 }
 
 VT_Window *vt_create_window(i32 w, i32 h, const char *title) {
-	if (_primary_window != nullptr) {
+	if (_primary_window) {
 		LOG_WARN("[WINDOW] > Multi-window is not supported");
 		return _primary_window;
 	}
 
 	VT_Window *win = calloc(1, sizeof(VT_Window));
-	if (win == nullptr) {
+	if (!win) {
 		LOG_ERROR("[WINDOW] > Failed to alloc memory");
 		return nullptr;
 	}
@@ -53,35 +50,32 @@ VT_Window *vt_create_window(i32 w, i32 h, const char *title) {
 	win->framesize = win->size;
 	win->should_close = false;
 
-	SDL_WindowFlags winflags = SDL_WINDOW_OPENGL;
-	win->handle = SDL_CreateWindow(title, w, h, winflags);
-	if (win->handle == nullptr) {
-		LOG_ERROR("[WINDOW] > Unable to create SDL3 window handler: %s", SDL_GetError());
+	glfwDefaultWindowHints();
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+
+	win->handle = glfwCreateWindow(w, h, title, nullptr, nullptr);
+	if (!win->handle) {
+		LOG_ERROR("[WINDOW] > Unable to create GLFW window handler");
 		vt_destroy_window(win);
 		return nullptr;
 	}
+	glfwMakeContextCurrent(win->handle);
 
-	win->glctx = SDL_GL_CreateContext(win->handle);
-	if (win->glctx == nullptr) {
-		LOG_ERROR("[GPU] > Failed to create OpenGL context: %s", SDL_GetError());
-		vt_destroy_window(win);
-		return nullptr;
-	}
-	SDL_GL_MakeCurrent(win->handle, win->glctx);
+	glfwSetWindowUserPointer(win->handle, win);
+	glfwSetWindowCloseCallback(win->handle, _vt_window_close_callback);
+	glfwSetWindowSizeCallback(win->handle, _vt_window_size_callback);
+	glfwSetFramebufferSizeCallback(win->handle, _vt_framebuffer_size_callback);
 
-	SDL_AddEventWatch(_vt_window_event, win);
 	return win;
 }
 
 void vt_destroy_window(VT_Window *win) {
-	assert(win != nullptr);
+	assert(win);
 
 	if (win->handle) {
-		SDL_DestroyWindow(win->handle);
-	}
-
-	if (win->glctx) {
-		SDL_GL_DestroyContext(win->glctx);
+		glfwDestroyWindow(win->handle);
 	}
 
 	free(win);
@@ -89,22 +83,23 @@ void vt_destroy_window(VT_Window *win) {
 }
 
 void vt_window_update(VT_Window *win) {
-	assert(win != nullptr);
+	assert(win);
 	sg_commit();
-	SDL_GL_SwapWindow(win->handle);
+	glfwSwapBuffers(win->handle);
+	glfwPollEvents();
 }
 
 bool vt_window_should_close(const VT_Window *win) {
-	assert(win != nullptr);
+	assert(win);
 	return win->should_close;
 }
 
 ivec2s vt_get_window_size(const VT_Window *win) {
-	assert(win != nullptr);
+	assert(win);
 	return win->size;
 }
 
 ivec2s vt_get_window_framesize(const VT_Window *win) {
-	assert(win != nullptr);
+	assert(win);
 	return win->framesize;
 }

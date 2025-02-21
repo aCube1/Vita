@@ -4,6 +4,7 @@
 #include "gpu/renderer.h"
 #include "cglm/struct/cam.h"
 #include "cglm/struct/mat3.h"
+#include "window.h"
 
 #include <stdlib.h>
 
@@ -38,10 +39,15 @@ typedef struct VT_RenderCommand {
 } VT_RenderCommand;
 
 struct VT_Renderer {
+	bool has_error;
+
 	u32 cur_vertex;
 	u32 cur_command;
 	u32 vertices_count;
 	u32 commands_count;
+	VT_Vertex *vertices;
+	VT_RenderCommand *commands;
+	VT_UniformData *uniforms;
 
 	u32 cur_state;
 	u32 cur_transform;
@@ -49,14 +55,8 @@ struct VT_Renderer {
 	mat4s transform_stack[_VT_MAX_STACK_DEPTH];
 
 	VT_RenderState state;
-
 	sg_pipeline pipelines[_VT_PRIMITIVETYPE_COUNT];
 	sg_buffer vertex_buf;
-	VT_Vertex *vertices;
-	VT_RenderCommand *commands;
-	VT_UniformData *uniforms;
-
-	bool has_error;
 };
 
 static sg_pipeline _vt_lookup_pipeline(
@@ -77,7 +77,7 @@ static sg_pipeline _vt_lookup_pipeline(
 
 VT_Renderer *vt_create_renderer(void) {
 	VT_Renderer *render = calloc(1, sizeof(VT_Renderer));
-	if (render == nullptr) {
+	if (!render) {
 		LOG_ERROR("[RENDER] > Failed to alloc memory");
 		return nullptr;
 	}
@@ -99,7 +99,7 @@ VT_Renderer *vt_create_renderer(void) {
 	for (u32 i = 0; i < _VT_PRIMITIVETYPE_COUNT; i += 1) {
 		sg_pipeline pip = _vt_lookup_pipeline(render, i);
 		if (pip.id == SG_INVALID_ID) {
-			LOG_ERROR("[RENDER] > Failed to make common pipelines");
+			LOG_ERROR("[RENDER] > Failed to make primitive pipelines");
 			vt_destroy_renderer(render);
 			return nullptr;
 		}
@@ -124,7 +124,7 @@ VT_Renderer *vt_create_renderer(void) {
 }
 
 void vt_destroy_renderer(VT_Renderer *render) {
-	if (render == nullptr) {
+	if (!render) {
 		return;
 	}
 
@@ -138,16 +138,17 @@ void vt_destroy_renderer(VT_Renderer *render) {
 		sg_destroy_buffer(render->vertex_buf);
 	}
 
-	if (render->vertices != nullptr) {
+	if (render->vertices) {
 		free(render->vertices);
 	}
-	if (render->commands != nullptr) {
+	if (render->commands) {
 		free(render->commands);
 	}
-	if (render->uniforms != nullptr) {
+
+	if (render->uniforms) {
 		for (u32 i = 0; i < render->commands_count; i += 1) {
 			void *ptr = render->uniforms[i].ptr;
-			if (ptr != nullptr) {
+			if (ptr) {
 				free(ptr);
 			}
 		}
@@ -158,7 +159,7 @@ void vt_destroy_renderer(VT_Renderer *render) {
 }
 
 void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
-	assert(render != nullptr);
+	assert(render);
 
 	if (render->cur_state >= _VT_MAX_STACK_DEPTH) {
 		LOG_WARN("[RENDER] > State's stack has overflow");
@@ -188,12 +189,16 @@ void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
 		.action = {
 			.colors[0].clear_value = { 0.25, 0.25, 0.25, 1.0},
 		},
-		.label = "vt_gpu.render_pass",
+		.swapchain = {
+			.width = framesize.x,
+			.height = framesize.y,
+		},
+		.label = "vt_render.default_pass",
 	};
 }
 
 void vt_render_end(VT_Renderer *render) {
-	assert(render != nullptr);
+	assert(render);
 
 	if (render->cur_state <= 0) {
 		LOG_WARN("[RENDER] > State's stack underflow");
@@ -246,7 +251,7 @@ void _vt_flush_draw(
 }
 
 void vt_render_flush(VT_Renderer *render) {
-	assert(render != nullptr && render->cur_state > 0);
+	assert(render && render->cur_state > 0);
 
 	u32 end_vertex = render->cur_vertex;
 	u32 end_cmd = render->cur_command;
@@ -311,4 +316,10 @@ void vt_render_flush(VT_Renderer *render) {
 		}
 	}
 	sg_end_pass();
+}
+
+void vt_render_draw(VT_Renderer *render, const VT_Vertex *vertices, u32 count) {
+	assert(render && render->cur_state > 0);
+	(void)vertices;
+	(void)count;
 }

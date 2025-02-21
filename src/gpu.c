@@ -1,7 +1,7 @@
 #include "gpu.h"
 
 #include "common.h"
-#include <SDL3/SDL_video.h>
+#include <GLFW/glfw3.h>
 #include <string.h>
 
 #define SOKOL_EXTERNAL_GL_LOADER
@@ -36,7 +36,7 @@ bool vt_gpu_setup(void) {
 	memset(&_gpu, 0, sizeof(struct VT_GPU));
 	_gpu.was_init = true;
 
-	i32 version = gladLoadGL(SDL_GL_GetProcAddress);
+	i32 version = gladLoadGL(glfwGetProcAddress);
 	if (version == 0) {
 		LOG_ERROR("[GPU] > Failed to create OpenGL context");
 		vt_gpu_shutdown();

@@ -37,6 +37,7 @@ Diagnostics:
       'readability-implicit-bool-conversion',
       'readability-magic-numbers',
       'readability-named-parameter',
+      'readability-simplify-boolean-expr',
       'readability-suspicious-call-argument',
       'readability-uppercase-literal-suffix',
     ]

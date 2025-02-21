@@ -60,7 +60,7 @@ void slog_callback(
 	char log[1024];
 	u32 end = 0;
 
-	if (tag != nullptr) {
+	if (tag) {
 		end += sprintf(log + end, "[%s]", tag);
 	}
 	end += sprintf(log + end, "[%d]", item);
