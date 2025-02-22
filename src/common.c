@@ -3,8 +3,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
+#include <time.h>
 
 static const char *_log_name[] = {
 	"DEBUG", "INFO", "WARN", "ERROR", "FATAL",
@@ -58,14 +58,16 @@ void slog_callback(
 	default: loglevel = LOGL_INFO; break;
 	}
 
-	char log[1024];
+	char log[1024]; // The log message will never be longer than 1024 bytes
+	u32 size = 0;
 	u32 end = 0;
 
 	if (tag) {
-	  end += snprintf(log + end, strlen(tag), "[%s]", tag);
+		size = snprintf(nullptr, 0, "[%s]", tag);
+		end = snprintf(log, size + 1, "[%s]", tag);
 	}
-	end += snprintf(log + end, 10, "[%d]", item);
-	end += snprintf(log + end, strlen(msg), " > %s", msg);
+	size = snprintf(nullptr, 0, "(%d) > %s", item, msg);
+	snprintf(log + end, size + 1, "(%d) > %s", item, msg);
 
 	log_message(loglevel, file, line, log);
 }
