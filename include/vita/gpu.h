@@ -1,5 +1,5 @@
-#ifndef VT_GPU_H
-#define VT_GPU_H
+#ifndef _VT_VITA_GPU_H
+#define _VT_VITA_GPU_H
 
 #include "cglm/types-struct.h"
 #include "gpu/color.h"

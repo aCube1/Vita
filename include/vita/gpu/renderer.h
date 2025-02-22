@@ -1,5 +1,5 @@
-#ifndef VT_GPU_RENDERER_H
-#define VT_GPU_RENDERER_H
+#ifndef _VT_VITA_GPU_RENDERER_H
+#define _VT_VITA_GPU_RENDERER_H
 
 #include "cglm/types-struct.h"
 #include "common.h"

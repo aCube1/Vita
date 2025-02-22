@@ -1,5 +1,5 @@
-#ifndef VT_WINDOW_H
-#define VT_WINDOW_H
+#ifndef _VT_VITA_WINDOW_H
+#define _VT_VITA_WINDOW_H
 
 #include "cglm/types-struct.h"
 #include "common.h"

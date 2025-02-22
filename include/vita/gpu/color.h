@@ -1,5 +1,5 @@
-#ifndef VT_GPU_COLOR_H
-#define VT_GPU_COLOR_H
+#ifndef _VT_VITA_GPU_COLOR_H
+#define _VT_VITA_GPU_COLOR_H
 
 #include "common.h"
 

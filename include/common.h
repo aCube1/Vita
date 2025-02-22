@@ -1,5 +1,5 @@
-#ifndef VT_COMMON_H
-#define VT_COMMON_H
+#ifndef _VT_COMMON_H
+#define _VT_COMMON_H
 
 #include <assert.h>
 // #include <stdbool.h>
