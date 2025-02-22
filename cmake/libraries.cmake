@@ -3,8 +3,8 @@ include_guard()
 set(_LIBS_DIR ${CMAKE_SOURCE_DIR}/ext)
 
 function(setup_libraries target)
-        # Find and link libraries
-        add_subdirectory(${_LIBS_DIR}/glfw)
+	# Find and link libraries
+	add_subdirectory(${_LIBS_DIR}/glfw)
 
 	option(CGLM_STATIC "" ON)
 	add_subdirectory(${_LIBS_DIR}/cglm)
