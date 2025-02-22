@@ -54,7 +54,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 	# Use address sanitizer flags.
 	message(STATUS "Enabling sanitizers...")
-	set(SANITIZER_FLAGS -fsanitize=address,undefined,leak -fno-omit-frame-pointer)
+	set(SANITIZER_FLAGS -fno-omit-frame-pointer)
+	if (APPLE)
+	    set(SANITIZER_FLAGS ${SANITIZER_FLAGS} -fsanitize=address,undefined)
+	else()
+	    set(SANITIZER_FLAGS ${SANITIZER_FLAGS} -fsanitize=address,undefined,leak)
+	endif()
 	target_compile_options(${PROJECT_NAME} PRIVATE "${SANITIZER_FLAGS}")
 	target_link_options(${PROJECT_NAME} PRIVATE "${SANITIZER_FLAGS}")
 endif()
