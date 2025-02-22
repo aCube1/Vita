@@ -1,10 +1,9 @@
 // Code adapted from:
 // https://github.com/edubart/sokol_gp/blob/master/sokol_gp.h
 
-#include "gpu/renderer.h"
+#include "vita/gpu/renderer.h"
 #include "cglm/struct/cam.h"
 #include "cglm/struct/mat3.h"
-#include "window.h"
 
 #include <stdlib.h>
 
@@ -316,10 +315,4 @@ void vt_render_flush(VT_Renderer *render) {
 		}
 	}
 	sg_end_pass();
-}
-
-void vt_render_draw(VT_Renderer *render, const VT_Vertex *vertices, u32 count) {
-	assert(render && render->cur_state > 0);
-	(void)vertices;
-	(void)count;
 }

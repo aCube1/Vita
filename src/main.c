@@ -1,7 +1,7 @@
 #include "common.h"
-#include "gpu.h"
-#include "gpu/renderer.h"
-#include "window.h"
+#include "vita/gpu.h"
+#include "vita/gpu/renderer.h"
+#include "vita/window.h"
 #include <stdlib.h>
 
 #define GLFW_INCLUDE_NONE

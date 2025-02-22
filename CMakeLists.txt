@@ -18,11 +18,11 @@ target_compile_features(
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
-		src/gpu/renderer.c
+		src/vita/gpu/renderer.c
+		src/vita/gpu.c
+		src/vita/window.c
 		src/common.c
-		src/gpu.c
 		src/main.c
-		src/window.c
 )
 
 target_include_directories(

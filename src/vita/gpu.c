@@ -1,4 +1,4 @@
-#include "gpu.h"
+#include "vita/gpu.h"
 
 #include "common.h"
 #include <GLFW/glfw3.h>
