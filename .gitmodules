@@ -1,3 +1,6 @@
 [submodule "ext/cglm"]
 	path = ext/cglm
 	url = git@github.com:recp/cglm.git
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/glfw/glfw.git
