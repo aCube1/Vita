@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 static const char *_log_name[] = {
 	"DEBUG", "INFO", "WARN", "ERROR", "FATAL",
@@ -61,10 +62,10 @@ void slog_callback(
 	u32 end = 0;
 
 	if (tag) {
-		end += sprintf(log + end, "[%s]", tag);
+	  end += snprintf(log + end, strlen(tag), "[%s]", tag);
 	}
-	end += sprintf(log + end, "[%d]", item);
-	end += sprintf(log + end, " > %s", msg);
+	end += snprintf(log + end, 10, "[%d]", item);
+	end += snprintf(log + end, strlen(msg), " > %s", msg);
 
 	log_message(loglevel, file, line, log);
 }
