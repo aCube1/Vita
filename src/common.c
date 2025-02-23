@@ -1,9 +1,9 @@
 #include "common.h"
 
+#include "config.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
 static const char *_log_name[] = {
@@ -27,8 +27,8 @@ void log_message(enum LogLevel level, const char *file, i32 line, const char *ms
 		_log_color[level], _log_name[level]
 	);
 #else
-	(void)file;
-	(void)line;
+	VT_UNUSED(file);
+	VT_UNUSED(line);
 	fprintf(stderr, "%s %s[%s]\x1b[0m - ", buf, _log_color[level], _log_name[level]);
 #endif
 
@@ -48,7 +48,7 @@ void slog_callback(
 	const char *file,
 	void *usrdata
 ) {
-	(void)usrdata;
+	VT_UNUSED(usrdata);
 
 	u32 loglevel;
 	switch (level) {
@@ -58,16 +58,19 @@ void slog_callback(
 	default: loglevel = LOGL_INFO; break;
 	}
 
-	char log[1024]; // The log message will never be longer than 1024 bytes
-	u32 size = 0;
-	u32 end = 0;
+	// The log message will never be longer than 512 bytes
+	static char log[512] = {};
 
-	if (tag) {
-		size = snprintf(nullptr, 0, "[%s]", tag);
-		end = snprintf(log, size + 1, "[%s]", tag);
+	u32 size = snprintf(nullptr, 0, "[%s](%d)", tag, item);
+	u32 end = snprintf(log, size + 1, "[%s](%d)", tag, item);
+	if (msg) {
+		size = snprintf(nullptr, 0, " > %s", msg);
+		snprintf(log + end, size + 1, " > %s", msg);
 	}
-	size = snprintf(nullptr, 0, "(%d) > %s", item, msg);
-	snprintf(log + end, size + 1, "(%d) > %s", item, msg);
 
 	log_message(loglevel, file, line, log);
+
+	if (loglevel == LOGL_FATAL) {
+		exit(EXIT_FAILURE);
+	}
 }

@@ -1,8 +1,10 @@
 #include "vita/gpu.h"
 
 #include "common.h"
-#include <GLFW/glfw3.h>
 #include <string.h>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 #define SOKOL_EXTERNAL_GL_LOADER
 #define SOKOL_GLCORE
@@ -47,8 +49,11 @@ bool vt_gpu_setup(void) {
 		GLAD_VERSION_MINOR(version)
 	);
 
-	sg_desc sgdesc = { 0 };
+	sg_desc sgdesc = {};
+#ifdef _DEBUG
 	sgdesc.logger.func = slog_callback;
+#endif
+
 	sg_setup(&sgdesc);
 	if (!sg_isvalid()) {
 		LOG_ERROR("[GPU] > Failed to setup SokolGFX");
