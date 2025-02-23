@@ -2,9 +2,11 @@
 
 #include "cglm/types-struct.h"
 #include "sokol_gfx.h"
-#include <GLFW/glfw3.h>
 #include <assert.h>
 #include <stdlib.h>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 typedef struct VT_Window {
 	GLFWwindow *handle;
@@ -54,6 +56,9 @@ VT_Window *vt_create_window(i32 w, i32 h, const char *title) {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+#ifdef VT_TARGET_MACOS
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
+#endif
 
 	win->handle = glfwCreateWindow(w, h, title, nullptr, nullptr);
 	if (!win->handle) {
