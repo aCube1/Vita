@@ -1,6 +1,7 @@
 #include "vita/gpu.h"
 
 #include "common.h"
+#include "log.h"
 #include <string.h>
 
 #define GLFW_INCLUDE_NONE
@@ -51,7 +52,7 @@ bool vt_gpu_setup(void) {
 
 	sg_desc sgdesc = {};
 #ifdef _DEBUG
-	sgdesc.logger.func = slog_callback;
+	sgdesc.logger.func = vt_slog_callback;
 #endif
 
 	sg_setup(&sgdesc);

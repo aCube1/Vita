@@ -4,7 +4,7 @@
 #include "vita/gpu/renderer.h"
 #include "cglm/struct/cam.h"
 #include "cglm/struct/mat3.h"
-
+#include "log.h"
 #include <stdlib.h>
 
 #define _VT_DEFAULT_MAX_VERTICES 65536
@@ -38,8 +38,7 @@ typedef struct VT_RenderCommand {
 } VT_RenderCommand;
 
 struct VT_Renderer {
-	bool has_error;
-
+	VT_Error error;
 	u32 cur_vertex;
 	u32 cur_command;
 	u32 vertices_count;
@@ -80,6 +79,7 @@ VT_Renderer *vt_create_renderer(void) {
 		LOG_ERROR("[RENDER] > Failed to alloc memory");
 		return nullptr;
 	}
+	render->error = VT_ERROR_OUT_OF_MEMORY;
 
 	render->vertices_count = _VT_DEFAULT_MAX_VERTICES;
 	render->commands_count = _VT_DEFAULT_MAX_COMMANDS;
@@ -157,15 +157,22 @@ void vt_destroy_renderer(VT_Renderer *render) {
 	free(render);
 }
 
+VT_Error vt_get_render_error(VT_Renderer *render) {
+	assert(render);
+	return render->error;
+}
+
 void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
 	assert(render);
 
 	if (render->cur_state >= _VT_MAX_STACK_DEPTH) {
 		LOG_WARN("[RENDER] > State's stack has overflow");
-		render->has_error = true;
+		render->error = VT_ERROR_MEM_OVERFLOW;
 		return;
 	}
-	render->has_error = false;
+
+	// Reset error state
+	render->error = VT_ERROR_NONE;
 
 	// Store current state
 	render->state_stack[render->cur_state] = render->state;
@@ -201,7 +208,6 @@ void vt_render_end(VT_Renderer *render) {
 
 	if (render->cur_state <= 0) {
 		LOG_WARN("[RENDER] > State's stack underflow");
-		render->has_error = true;
 		return;
 	}
 
@@ -260,7 +266,7 @@ void vt_render_flush(VT_Renderer *render) {
 	render->cur_command = render->state._base_command;
 
 	// Skip drawing if any error happened
-	if (render->has_error) {
+	if (render->error != VT_ERROR_NONE) {
 		return;
 	}
 
@@ -276,7 +282,7 @@ void vt_render_flush(VT_Renderer *render) {
 	u32 offset = sg_append_buffer(render->vertex_buf, &vertex_range);
 	if (sg_query_buffer_overflow(render->vertex_buf)) {
 		LOG_WARN("[RENDER] > Vertex buffer overflowed");
-		render->has_error = true;
+		render->error = VT_ERROR_MEM_OVERFLOW;
 		return;
 	}
 

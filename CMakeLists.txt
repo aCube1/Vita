@@ -21,7 +21,7 @@ target_sources(
 		src/vita/gpu/renderer.c
 		src/vita/gpu.c
 		src/vita/window.c
-		src/common.c
+		src/log.c
 		src/main.c
 )
 
@@ -56,9 +56,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	message(STATUS "Enabling sanitizers...")
 	set(SANITIZER_FLAGS -fno-omit-frame-pointer)
 	if (APPLE)
-	    set(SANITIZER_FLAGS ${SANITIZER_FLAGS} -fsanitize=address,undefined)
+		set(SANITIZER_FLAGS ${SANITIZER_FLAGS} -fsanitize=address,undefined)
 	else()
-	    set(SANITIZER_FLAGS ${SANITIZER_FLAGS} -fsanitize=address,undefined,leak)
+		set(SANITIZER_FLAGS ${SANITIZER_FLAGS} -fsanitize=address,undefined,leak)
 	endif()
 	target_compile_options(${PROJECT_NAME} PRIVATE "${SANITIZER_FLAGS}")
 	target_link_options(${PROJECT_NAME} PRIVATE "${SANITIZER_FLAGS}")

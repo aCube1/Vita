@@ -1,4 +1,4 @@
-#include "common.h"
+#include "log.h"
 
 #include "config.h"
 #include <stdarg.h>
@@ -14,7 +14,7 @@ static const char *_log_color[] = {
 	"\x1b[32m", "\x1b[36m", "\x1b[33m", "\x1b[31m", "\x1b[35m",
 };
 
-void log_message(enum LogLevel level, const char *file, i32 line, const char *msg, ...) {
+void vt_log_message(VT_LogLevel level, const char *file, i32 line, const char *msg, ...) {
 	time_t timer = time(nullptr);
 	struct tm *ltime = localtime(&timer);
 
@@ -37,6 +37,10 @@ void log_message(enum LogLevel level, const char *file, i32 line, const char *ms
 	vfprintf(stderr, msg, args);
 	fprintf(stderr, "\n");
 	va_end(args);
+
+	if (level == VT_LOG_FATAL) {
+		abort();
+	}
 }
 
 void slog_callback(
@@ -52,10 +56,10 @@ void slog_callback(
 
 	u32 loglevel;
 	switch (level) {
-	case 0: loglevel = LOGL_FATAL; break;
-	case 1: loglevel = LOGL_ERROR; break;
-	case 2: loglevel = LOGL_WARN; break;
-	default: loglevel = LOGL_INFO; break;
+	case 0: loglevel = VT_LOG_FATAL; break;
+	case 1: loglevel = VT_LOG_ERROR; break;
+	case 2: loglevel = VT_LOG_WARN; break;
+	default: loglevel = VT_LOG_INFO; break;
 	}
 
 	// The log message will never be longer than 512 bytes
@@ -68,9 +72,5 @@ void slog_callback(
 		snprintf(log + end, size + 1, " > %s", msg);
 	}
 
-	log_message(loglevel, file, line, log);
-
-	if (loglevel == LOGL_FATAL) {
-		exit(EXIT_FAILURE);
-	}
+	vt_log_message(loglevel, file, line, log);
 }

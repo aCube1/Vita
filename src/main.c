@@ -1,4 +1,5 @@
 #include "common.h"
+#include "log.h"
 #include "vita/gpu.h"
 #include "vita/gpu/renderer.h"
 #include "vita/window.h"
@@ -29,24 +30,24 @@ static void _vt_glfw_err_callback(i32 err, const char *desc) {
 
 static VT_AppStatus _vt_init(VT_AppState *app) {
 	if (!glfwInit()) {
-		LOG_FATAL("[VT] > Failed to initialize GLFW library");
+		LOG_ERROR("[VT] > Failed to initialize GLFW library");
 		return VT_APP_FAILURE;
 	}
 
 	app->window = vt_create_window(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT, "Vita");
 	if (!app->window) {
-		LOG_FATAL("[VT] > Unable to create primary window");
+		LOG_ERROR("[VT] > Unable to create primary window");
 		return VT_APP_FAILURE;
 	}
 
 	if (!vt_gpu_setup()) {
-		LOG_FATAL("[VT] > Unable to setup GPU handler");
+		LOG_ERROR("[VT] > Unable to setup GPU handler");
 		return VT_APP_FAILURE;
 	}
 
 	app->render = vt_create_renderer();
 	if (!app->render) {
-		LOG_FATAL("[VT] > Unable to create main 2D renderer");
+		LOG_ERROR("[VT] > Unable to create main 2D renderer");
 		return VT_APP_FAILURE;
 	}
 
@@ -88,7 +89,7 @@ int main(void) {
 	_vt_quit(&app);
 
 	if (app.status == VT_APP_FAILURE) {
-		LOG_FATAL("[VT] > App exited with a critical failure");
+		LOG_ERROR("[VT] > App exited with a critical failure");
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

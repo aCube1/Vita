@@ -24,6 +24,8 @@ typedef struct VT_Renderer VT_Renderer;
 VT_Renderer *vt_create_renderer(void);
 void vt_destroy_renderer(VT_Renderer *render);
 
+VT_Error vt_get_render_error(VT_Renderer *render);
+
 void vt_render_begin(VT_Renderer *render, ivec2s framesize);
 void vt_render_end(VT_Renderer *render);
 void vt_render_flush(VT_Renderer *render);

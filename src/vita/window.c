@@ -1,6 +1,7 @@
 #include "vita/window.h"
 
 #include "cglm/types-struct.h"
+#include "log.h"
 #include "sokol_gfx.h"
 #include <assert.h>
 #include <stdlib.h>
