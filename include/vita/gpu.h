@@ -4,28 +4,26 @@
 #include "cglm/types-struct.h"
 #include "gpu/color.h"
 #include "sokol_gfx.h"
+#include "vita/gpu/texture.h"
 #include <glad/gl.h>
 
-#define VT_GPU_ATTR_POS		   0
-#define VT_GPU_ATTR_UV		   1
-#define VT_GPU_ATTR_COLOR	   2
+#define VT_GPU_ATTR_POS	  0
+#define VT_GPU_ATTR_UV	  1
+#define VT_GPU_ATTR_COLOR 2
 
-#define VT_GPU_UB_VERTEXPARAMS 0
-#define VT_GPU_UB_TEX0		   0
+#define VT_GPU_UB_TEX0	  0
 
 typedef enum VT_PrimitiveType {
-	VT_PRIMITIVETYPE_POINTS,
+	VT_PRIMITIVETYPE_POINTS = 0,
 	VT_PRIMITIVETYPE_LINES,
+	VT_PRIMITIVETYPE_LINE_STRIP,
 	VT_PRIMITIVETYPE_TRIANGLES,
+	VT_PRIMITIVETYPE_TRIANGLE_STRIP,
 	_VT_PRIMITIVETYPE_COUNT,
 } VT_PrimitiveType;
 
-typedef struct VT_VertexParams {
-	mat4s mvp;
-} VT_VertexParams;
-
 typedef struct VT_Vertex {
-	vec2s position;
+	vec3s position;
 	vec2s texcoord;
 	u8color color;
 } VT_Vertex;
@@ -43,6 +41,6 @@ sg_image vt_gpu_get_white_image(void);
 sg_sampler vt_gpu_get_nearest_sampler(void);
 sg_shader vt_gpu_get_common_shader(void);
 
-sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primtype);
+sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primitive);
 
 #endif

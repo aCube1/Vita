@@ -144,16 +144,6 @@ sg_shader vt_gpu_get_common_shader(void) {
 		.attrs[VT_GPU_ATTR_POS].glsl_name = "a_pos",
 		.attrs[VT_GPU_ATTR_UV].glsl_name = "a_uv",
 		.attrs[VT_GPU_ATTR_COLOR].glsl_name = "a_color",
-		.uniform_blocks[VT_GPU_UB_VERTEXPARAMS] = {
-			.stage = SG_SHADERSTAGE_VERTEX,
-			.layout = SG_UNIFORMLAYOUT_STD140,
-			.size = sizeof(VT_VertexParams),
-			.glsl_uniforms[0] = {
-				.type = SG_UNIFORMTYPE_MAT4,
-				.array_count = 1,
-				.glsl_name = "VT_VertexParams"
-			},
-		},
 		.images[0] = {
 			.stage = SG_SHADERSTAGE_FRAGMENT,
 			.image_type = SG_IMAGETYPE_2D,
@@ -183,14 +173,8 @@ sg_shader vt_gpu_get_common_shader(void) {
 	return _gpu.common_shdr;
 }
 
-sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primtype) {
-	sg_primitive_type primitive_type;
-	switch (primtype) {
-	case VT_PRIMITIVETYPE_POINTS: primitive_type = SG_PRIMITIVETYPE_POINTS; break;
-	case VT_PRIMITIVETYPE_LINES: primitive_type = SG_PRIMITIVETYPE_LINES; break;
-	case VT_PRIMITIVETYPE_TRIANGLES:
-	default: primitive_type = SG_PRIMITIVETYPE_TRIANGLES; break;
-	}
+sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primitive) {
+	sg_primitive_type primitive_type = primitive + 1;
 
 	sg_pipeline_desc pipdesc = {
 		.shader = shdr,
@@ -198,7 +182,7 @@ sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primtype) {
 			.buffers[0].stride = sizeof(VT_Vertex),
 			.attrs[VT_GPU_ATTR_POS] = {
 				.offset = offsetof(VT_Vertex, position),
-				.format = SG_VERTEXFORMAT_FLOAT2,
+				.format = SG_VERTEXFORMAT_FLOAT3,
 			},
 			.attrs[VT_GPU_ATTR_UV] = {
 				.offset = offsetof(VT_Vertex, texcoord),

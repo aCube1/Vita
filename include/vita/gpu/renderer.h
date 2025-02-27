@@ -10,13 +10,15 @@ typedef struct VT_RenderState {
 	irect viewport;
 	mat4s projview;
 	mat3s transform;
+	mat4s mvp;
 	u8color color;
 	sg_pipeline pipeline;
 	sg_pass render_pass;
-	VT_UniformData *uniform;
+	VT_UniformData uniform;
 
 	u32 _base_vertex;
 	u32 _base_command;
+	u32 _base_uniform;
 } VT_RenderState;
 
 typedef struct VT_Renderer VT_Renderer;
@@ -29,5 +31,9 @@ VT_Error vt_get_render_error(VT_Renderer *render);
 void vt_render_begin(VT_Renderer *render, ivec2s framesize);
 void vt_render_end(VT_Renderer *render);
 void vt_render_flush(VT_Renderer *render);
+
+void vt_render_geometry(
+	VT_Renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
+);
 
 #endif

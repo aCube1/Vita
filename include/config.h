@@ -3,7 +3,8 @@
 
 #if defined(__APPLE__)
 #	include <TargetConditionals.h>
-#	if TARGET_OS_MAC
+#	define GL_SILENCE_DEPRECATION
+#	if defined(TARGET_OS_MAC)
 #		define VT_TARGET_MACOS 1
 #	endif
 #elif defined(WIN32) || defined(_WIN32)

@@ -66,9 +66,41 @@ static void _vt_quit(VT_AppState *app) {
 	glfwTerminate();
 }
 
+// TODO: Function just for testing, remove later
+static void _vt_draw_quad(VT_Renderer *render, f32 x, f32 y, f32 w, f32 h) {
+	vec3s quad[4] = {
+		{ { x, y, 0.0 } },		   // Top left
+		{ { x + w, y, 0.0 } },	   // Top right
+		{ { x + w, y + h, 0.0 } }, // Bottom right
+		{ { x, y + h, 0.0 } },	   // Bottom left
+	};
+
+	const vec2s quad_uv[4] = {
+		{ { 0.0f, 0.0f } }, // Top left
+		{ { 1.0f, 0.0f } }, // Top right
+		{ { 1.0f, 1.0f } }, // Bottom right
+		{ { 0.0f, 1.0f } }, // Bottom left
+	};
+
+	VT_Vertex vertices[6] = {
+		{ quad[0], quad_uv[0], VT_COLOR_RED },	 // Top left
+		{ quad[1], quad_uv[1], VT_COLOR_GREEN }, // Top right
+		{ quad[2], quad_uv[2], VT_COLOR_BLUE },	 // Bottom right
+
+		{ quad[0], quad_uv[0], VT_COLOR_RED },	 // Top left
+		{ quad[2], quad_uv[2], VT_COLOR_BLUE },	 // Bottom right
+		{ quad[3], quad_uv[3], VT_COLOR_WHITE }, // Bottom left
+	};
+
+	vt_render_geometry(render, VT_PRIMITIVETYPE_TRIANGLES, vertices, 6);
+}
+
 static VT_AppStatus _vt_iterate(VT_AppState *app) {
 	vt_render_begin(app->render, vt_get_window_framesize(app->window));
+	_vt_draw_quad(app->render, 960 / 2, 540 / 2, 128, 128);
+	vt_render_flush(app->render);
 	vt_render_end(app->render);
+
 	vt_window_update(app->window);
 
 	if (vt_window_should_close(app->window)) {

@@ -43,16 +43,16 @@ void vt_log_message(VT_LogLevel level, const char *file, i32 line, const char *m
 	}
 }
 
-void slog_callback(
+void vt_slog_callback(
 	const char *tag,
 	u32 level,
 	u32 item,
 	const char *msg,
 	u32 line,
 	const char *file,
-	void *usrdata
+	void *usrptr
 ) {
-	VT_UNUSED(usrdata);
+	VT_UNUSED(usrptr);
 
 	u32 loglevel;
 	switch (level) {

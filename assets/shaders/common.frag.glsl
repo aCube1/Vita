@@ -1,5 +1,4 @@
-#version 410
-
+#version 410 core
 #extension GL_ARB_shading_language_420pack: enable
 
 layout(binding = 0) uniform sampler2D u_tex0;
