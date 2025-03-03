@@ -11,6 +11,8 @@
 #define WINDOW_DEFAULT_WIDTH  960
 #define WINDOW_DEFAULT_HEIGHT 540
 
+#define _DEBUG_RECT_COUNTS	  2040
+
 typedef enum VT_AppStatus {
 	VT_APP_FAILURE,
 	VT_APP_SUCCESS,
@@ -20,6 +22,7 @@ typedef enum VT_AppStatus {
 typedef struct VT_AppState {
 	VT_Window *window;
 	VT_Renderer *render;
+	vec2s rects[_DEBUG_RECT_COUNTS];
 
 	VT_AppStatus status;
 } VT_AppState;
@@ -49,6 +52,20 @@ static VT_AppStatus _vt_init(VT_AppState *app) {
 	if (!app->render) {
 		LOG_ERROR("[VT] > Unable to create main 2D renderer");
 		return VT_APP_FAILURE;
+	}
+
+	u32 y = 0;
+	u32 x = 0;
+	for (u32 i = 0; i < _DEBUG_RECT_COUNTS; i += 1) {
+		app->rects[i].x = x;
+		app->rects[i].y = y;
+
+		if (x + 16 >= 960) {
+			y += 16;
+			x = 0;
+		} else {
+			x += 16;
+		}
 	}
 
 	return VT_APP_CONTINUE;
@@ -97,7 +114,11 @@ static void _vt_draw_quad(VT_Renderer *render, f32 x, f32 y, f32 w, f32 h) {
 
 static VT_AppStatus _vt_iterate(VT_AppState *app) {
 	vt_render_begin(app->render, vt_get_window_framesize(app->window));
-	_vt_draw_quad(app->render, 960 / 2, 540 / 2, 128, 128);
+
+	for (u32 i = 0; i < _DEBUG_RECT_COUNTS; i += 1) {
+		_vt_draw_quad(app->render, app->rects[i].x, app->rects[i].y, 16, 16);
+	}
+
 	vt_render_flush(app->render);
 	vt_render_end(app->render);
 

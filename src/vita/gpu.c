@@ -10,7 +10,7 @@
 #define SOKOL_EXTERNAL_GL_LOADER
 #define SOKOL_GLCORE
 #define SOKOL_IMPL
-#include "sokol_gfx.h"
+#include "sokol/sokol_gfx.h"
 
 struct VT_GPU {
 	bool was_init;

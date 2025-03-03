@@ -14,7 +14,8 @@ typedef struct VT_RenderState {
 	u8color color;
 	sg_pipeline pipeline;
 	sg_pass render_pass;
-	VT_UniformData uniform;
+
+	VT_Uniform uniform;
 
 	u32 _base_vertex;
 	u32 _base_command;
@@ -31,6 +32,15 @@ VT_Error vt_get_render_error(VT_Renderer *render);
 void vt_render_begin(VT_Renderer *render, ivec2s framesize);
 void vt_render_end(VT_Renderer *render);
 void vt_render_flush(VT_Renderer *render);
+
+void vt_set_render_pipeline(VT_Renderer *render, sg_pipeline pip);
+void vt_set_render_uniform(
+	VT_Renderer *render,
+	const void *vs_data,
+	usize vs_size,
+	const void *fs_data,
+	usize fs_size
+);
 
 void vt_render_geometry(
 	VT_Renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
