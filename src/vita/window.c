@@ -2,7 +2,7 @@
 
 #include "cglm/types-struct.h"
 #include "log.h"
-#include "sokol_gfx.h"
+#include "sokol/sokol_gfx.h"
 #include <assert.h>
 #include <stdlib.h>
 
@@ -93,6 +93,11 @@ void vt_window_update(VT_Window *win) {
 	sg_commit();
 	glfwSwapBuffers(win->handle);
 	glfwPollEvents();
+}
+
+GLFWwindow *vt_get_window_handle(const VT_Window *win) {
+	assert(win);
+	return win->handle;
 }
 
 bool vt_window_should_close(const VT_Window *win) {
