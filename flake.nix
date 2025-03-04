@@ -18,6 +18,8 @@
         packages.default
       ];
 
+      packages = with pkgs; [ ccache doxygen ];
+
       shellHook = ''
         export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath (with pkgs; [
           wayland
@@ -26,6 +28,8 @@
           xorg.libX11
           xorg.libXinerama
         ])}:$LD_LIBRARY_PATH
+
+        export CC=clang CXX=clang++
       '';
     };
 
@@ -40,6 +44,7 @@
         cmake
         ninja
         pkg-config
+        wayland-scanner
       ];
 
       # TODO(binaryskunk): i need to make this prettier, lol
