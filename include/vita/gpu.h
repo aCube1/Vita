@@ -3,8 +3,7 @@
 
 #include "cglm/types-struct.h"
 #include "gpu/color.h"
-#include "sokol_gfx.h"
-#include "vita/gpu/texture.h"
+#include "sokol/sokol_gfx.h"
 #include <glad/gl.h>
 
 #define VT_GPU_ATTR_POS	  0
@@ -28,11 +27,11 @@ typedef struct VT_Vertex {
 	u8color color;
 } VT_Vertex;
 
-typedef struct VT_UniformData {
-	sg_shader_stage stage;
-	usize size;
+typedef struct VT_Uniform {
+	usize vs_size;
+	usize fs_size;
 	void *ptr;
-} VT_UniformData;
+} VT_Uniform;
 
 bool vt_gpu_setup(void);
 void vt_gpu_shutdown(void);

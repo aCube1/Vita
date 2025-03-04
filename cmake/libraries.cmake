@@ -19,7 +19,7 @@ function(setup_libraries target)
 
 	target_include_directories(
 		${target} PRIVATE
-			${_LIBS_DIR}/sokol
+			${_LIBS_DIR}
 			${_LIBS_DIR}/glad/include
 	)
 
