@@ -27,6 +27,7 @@
           mesa
           xorg.libX11
           xorg.libXinerama
+          libGL
         ])}:$LD_LIBRARY_PATH
 
         export CC=clang CXX=clang++
@@ -48,7 +49,7 @@
       ];
 
       # TODO(binaryskunk): i need to make this prettier, lol
-      buildInputs = with pkgs; [ wayland.dev libxkbcommon.dev mesa.dev wayland-protocols xorg.libX11 xorg.libxcb xorg.libXcursor xorg.libXrandr xorg.libXinerama xorg.libXi xorg.libXext xorg.libXi xorg.libXft xorg.libXrender xorg.xcbutil xorg.xcbutilimage xorg.xcbutilkeysyms xorg.xcbutilrenderutil ];
+      buildInputs = with pkgs; [ wayland.dev libxkbcommon.dev mesa.dev wayland-protocols xorg.libX11 xorg.libxcb xorg.libXcursor xorg.libXrandr xorg.libXinerama xorg.libXi xorg.libXext xorg.libXi xorg.libXft xorg.libXrender xorg.xcbutil xorg.xcbutilimage xorg.xcbutilkeysyms xorg.xcbutilrenderutil libGL ];
     };
   });
 }
