@@ -5,7 +5,7 @@
 #include "common.h"
 #include "vita/gpu.h"
 
-typedef struct VT_RenderState {
+typedef struct vt_batchstate {
 	ivec2s framesize;
 	irect viewport;
 	mat4s projview;
@@ -20,22 +20,22 @@ typedef struct VT_RenderState {
 	u32 _base_vertex;
 	u32 _base_command;
 	u32 _base_uniform;
-} VT_RenderState;
+} vt_batchstate;
 
-typedef struct VT_Renderer VT_Renderer;
+typedef struct vt_renderer vt_renderer;
 
-VT_Renderer *vt_create_renderer(void);
-void vt_destroy_renderer(VT_Renderer *render);
+vt_renderer *vt_create_renderer(void);
+void vt_destroy_renderer(vt_renderer *render);
 
-VT_Error vt_get_render_error(VT_Renderer *render);
+vt_error vt_get_render_error(vt_renderer *render);
 
-void vt_render_begin(VT_Renderer *render, ivec2s framesize);
-void vt_render_end(VT_Renderer *render);
-void vt_render_flush(VT_Renderer *render);
+void vt_render_begin(vt_renderer *render, ivec2s framesize);
+void vt_render_end(vt_renderer *render);
+void vt_render_flush(vt_renderer *render);
 
-void vt_set_render_pipeline(VT_Renderer *render, sg_pipeline pip);
+void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pip);
 void vt_set_render_uniform(
-	VT_Renderer *render,
+	vt_renderer *render,
 	const void *vs_data,
 	usize vs_size,
 	const void *fs_data,
@@ -43,7 +43,7 @@ void vt_set_render_uniform(
 );
 
 void vt_render_geometry(
-	VT_Renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
+	vt_renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
 );
 
 #endif

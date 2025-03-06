@@ -40,8 +40,8 @@ typedef struct VT_RenderCommand {
 	};
 } VT_RenderCommand;
 
-struct VT_Renderer {
-	VT_Error error;
+struct vt_renderer {
+	vt_error error;
 	u32 cur_vertex;
 	u32 cur_command;
 	u32 cur_uniform;
@@ -54,16 +54,16 @@ struct VT_Renderer {
 
 	u32 cur_state;
 	u32 cur_transform;
-	VT_RenderState state_stack[_VT_MAX_STACK_DEPTH];
+	vt_batchstate state_stack[_VT_MAX_STACK_DEPTH];
 	mat4s transform_stack[_VT_MAX_STACK_DEPTH];
 
-	VT_RenderState state;
+	vt_batchstate state;
 	sg_pipeline pipelines[_VT_PRIMITIVETYPE_COUNT];
 	sg_buffer vertex_buf;
 };
 
 static sg_pipeline _vt_lookup_pipeline(
-	VT_Renderer *render, VT_PrimitiveType primitive_type
+	vt_renderer *render, VT_PrimitiveType primitive_type
 ) {
 	u32 pip_idx = primitive_type;
 	if (render->pipelines[pip_idx].id != SG_INVALID_ID) {
@@ -78,8 +78,8 @@ static sg_pipeline _vt_lookup_pipeline(
 	return pip;
 }
 
-VT_Renderer *vt_create_renderer(void) {
-	VT_Renderer *render = calloc(1, sizeof(VT_Renderer));
+vt_renderer *vt_create_renderer(void) {
+	vt_renderer *render = calloc(1, sizeof(vt_renderer));
 	if (!render) {
 		LOG_ERROR("[RENDER] > Failed to alloc memory");
 		return nullptr;
@@ -128,7 +128,7 @@ VT_Renderer *vt_create_renderer(void) {
 	return render;
 }
 
-void vt_destroy_renderer(VT_Renderer *render) {
+void vt_destroy_renderer(vt_renderer *render) {
 	if (!render) {
 		return;
 	}
@@ -163,12 +163,12 @@ void vt_destroy_renderer(VT_Renderer *render) {
 	free(render);
 }
 
-VT_Error vt_get_render_error(VT_Renderer *render) {
+vt_error vt_get_render_error(vt_renderer *render) {
 	assert(render);
 	return render->error;
 }
 
-void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
+void vt_render_begin(vt_renderer *render, ivec2s framesize) {
 	assert(render);
 
 	if (render->cur_state >= _VT_MAX_STACK_DEPTH) {
@@ -213,7 +213,7 @@ void vt_render_begin(VT_Renderer *render, ivec2s framesize) {
 	};
 }
 
-void vt_render_end(VT_Renderer *render) {
+void vt_render_end(vt_renderer *render) {
 	assert(render);
 
 	if (render->cur_state <= 0) {
@@ -227,7 +227,7 @@ void vt_render_end(VT_Renderer *render) {
 }
 
 void _vt_flush_draw(
-	VT_Renderer *render,
+	vt_renderer *render,
 	VT_DrawCall *draw,
 	sg_bindings *binds,
 	u32 *cur_pipeline,
@@ -277,7 +277,7 @@ void _vt_flush_draw(
 	sg_draw(draw->vertex_idx - render->state._base_vertex, draw->vertex_count, 1);
 }
 
-void vt_render_flush(VT_Renderer *render) {
+void vt_render_flush(vt_renderer *render) {
 	assert(render && render->cur_state > 0);
 
 	u32 end_vertex = render->cur_vertex;
@@ -348,7 +348,7 @@ void vt_render_flush(VT_Renderer *render) {
 	sg_end_pass();
 }
 
-void vt_set_render_pipeline(VT_Renderer *render, sg_pipeline pip) {
+void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pip) {
 	assert(render);
 	render->state.pipeline = pip;
 
@@ -358,7 +358,7 @@ void vt_set_render_pipeline(VT_Renderer *render, sg_pipeline pip) {
 }
 
 void vt_set_render_uniform(
-	VT_Renderer *render,
+	vt_renderer *render,
 	const void *vs_data,
 	usize vs_size,
 	const void *fs_data,
@@ -391,7 +391,7 @@ void vt_set_render_uniform(
 	uniform->fs_size = fs_size;
 }
 
-static VT_Vertex *_vt_get_vertices(VT_Renderer *render, u32 count) {
+static VT_Vertex *_vt_get_vertices(vt_renderer *render, u32 count) {
 	if (render->cur_vertex + count > render->vertices_count) {
 		LOG_ERROR("[RENDER] > Vertices buffer overflowed");
 		render->error = VT_ERROR_MEM_OVERFLOW;
@@ -403,7 +403,7 @@ static VT_Vertex *_vt_get_vertices(VT_Renderer *render, u32 count) {
 	return vertices;
 }
 
-static VT_RenderCommand *_vt_get_prev_command(VT_Renderer *render, u32 count) {
+static VT_RenderCommand *_vt_get_prev_command(vt_renderer *render, u32 count) {
 	// Don't underflow command queue
 	if (render->cur_command - render->state._base_command < count) {
 		return nullptr;
@@ -412,7 +412,7 @@ static VT_RenderCommand *_vt_get_prev_command(VT_Renderer *render, u32 count) {
 	return &render->commands[render->cur_command - count];
 }
 
-static VT_RenderCommand *_vt_get_next_command(VT_Renderer *render) {
+static VT_RenderCommand *_vt_get_next_command(vt_renderer *render) {
 	if (render->cur_command == render->commands_count) {
 		return nullptr;
 	}
@@ -438,7 +438,7 @@ static inline bool _vt_do_region_overlap(frect ra, frect rb) {
 }
 
 static bool _vt_try_merge_commands(
-	VT_Renderer *render,
+	vt_renderer *render,
 	sg_pipeline pip,
 	frect region,
 	VT_Uniform *uniform,
@@ -598,7 +598,7 @@ static bool _vt_try_merge_commands(
 }
 
 static void _vt_queue_draw(
-	VT_Renderer *render,
+	vt_renderer *render,
 	sg_pipeline pip,
 	frect region,
 	u32 vertex_idx,
@@ -668,7 +668,7 @@ static void _vt_queue_draw(
 }
 
 void vt_render_geometry(
-	VT_Renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
+	vt_renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
 ) {
 	assert(render && vertices);
 	assert(render->cur_state > 0);

@@ -8,11 +8,12 @@
 #define VT_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define VT_MAX(a, b) ((a) > (b) ? (a) : (b))
 
-typedef enum VT_Error {
+typedef enum vt_error {
 	VT_ERROR_NONE,
+	VT_ERROR_WINDOW_FAILURE,
 	VT_ERROR_OUT_OF_MEMORY,
 	VT_ERROR_MEM_OVERFLOW,
-} VT_Error;
+} vt_error;
 
 typedef uint8_t u8;
 typedef uint16_t u16;

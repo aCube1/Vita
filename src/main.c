@@ -13,45 +13,48 @@
 
 #define _DEBUG_RECT_COUNTS	  2040
 
-typedef enum VT_AppStatus {
-	VT_APP_FAILURE,
-	VT_APP_SUCCESS,
-	VT_APP_CONTINUE,
-} VT_AppStatus;
+typedef enum vt_status {
+	VT_STATUS_FAILURE,
+	VT_STATUS_SUCCESS,
+	VT_STATUS_CONTINUE,
+} vt_status;
 
-typedef struct VT_AppState {
-	VT_Window *window;
-	VT_Renderer *render;
+typedef struct vt_appstate {
+	vt_window window;
+	vt_renderer *render;
 	vec2s rects[_DEBUG_RECT_COUNTS];
 
-	VT_AppStatus status;
-} VT_AppState;
+	vt_status status;
+} vt_appstate;
 
 static void _vt_glfw_err_callback(i32 err, const char *desc) {
 	LOG_ERROR("[VT] > GLFW Error - (%d) %s", err, desc);
 }
 
-static VT_AppStatus _vt_init(VT_AppState *app) {
+static vt_status _vt_init(vt_appstate *app) {
 	if (!glfwInit()) {
 		LOG_ERROR("[VT] > Failed to initialize GLFW library");
-		return VT_APP_FAILURE;
+		return VT_STATUS_FAILURE;
 	}
+	vt_error err;
 
-	app->window = vt_create_window(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT, "Vita");
-	if (!app->window) {
+	err = vt_create_window(
+		&app->window, WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT, "Vita"
+	);
+	if (err != VT_ERROR_NONE) {
 		LOG_ERROR("[VT] > Unable to create primary window");
-		return VT_APP_FAILURE;
+		return VT_STATUS_FAILURE;
 	}
 
 	if (!vt_gpu_setup()) {
 		LOG_ERROR("[VT] > Unable to setup GPU handler");
-		return VT_APP_FAILURE;
+		return VT_STATUS_FAILURE;
 	}
 
 	app->render = vt_create_renderer();
 	if (!app->render) {
 		LOG_ERROR("[VT] > Unable to create main 2D renderer");
-		return VT_APP_FAILURE;
+		return VT_STATUS_FAILURE;
 	}
 
 	u32 y = 0;
@@ -68,13 +71,11 @@ static VT_AppStatus _vt_init(VT_AppState *app) {
 		}
 	}
 
-	return VT_APP_CONTINUE;
+	return VT_STATUS_CONTINUE;
 }
 
-static void _vt_quit(VT_AppState *app) {
-	if (app->window) {
-		vt_destroy_window(app->window);
-	}
+static void _vt_quit(vt_appstate *app) {
+	vt_destroy_window(&app->window);
 	if (app->render) {
 		vt_destroy_renderer(app->render);
 	}
@@ -84,7 +85,7 @@ static void _vt_quit(VT_AppState *app) {
 }
 
 // TODO: Function just for testing, remove later
-static void _vt_draw_quad(VT_Renderer *render, f32 x, f32 y, f32 w, f32 h) {
+static void _vt_draw_quad(vt_renderer *render, f32 x, f32 y, f32 w, f32 h) {
 	vec3s quad[4] = {
 		{ { x, y, 0.0 } },		   // Top left
 		{ { x + w, y, 0.0 } },	   // Top right
@@ -112,8 +113,8 @@ static void _vt_draw_quad(VT_Renderer *render, f32 x, f32 y, f32 w, f32 h) {
 	vt_render_geometry(render, VT_PRIMITIVETYPE_TRIANGLES, vertices, 6);
 }
 
-static VT_AppStatus _vt_iterate(VT_AppState *app) {
-	vt_render_begin(app->render, vt_get_window_framesize(app->window));
+static vt_status _vt_iterate(vt_appstate *app) {
+	vt_render_begin(app->render, app->window.framesize);
 
 	for (u32 i = 0; i < _DEBUG_RECT_COUNTS; i += 1) {
 		_vt_draw_quad(app->render, app->rects[i].x, app->rects[i].y, 16, 16);
@@ -122,26 +123,26 @@ static VT_AppStatus _vt_iterate(VT_AppState *app) {
 	vt_render_flush(app->render);
 	vt_render_end(app->render);
 
-	vt_window_update(app->window);
+	vt_window_update(&app->window);
 
-	if (vt_window_should_close(app->window)) {
-		return VT_APP_SUCCESS;
+	if (app->window.should_close) {
+		return VT_STATUS_SUCCESS;
 	}
-	return VT_APP_CONTINUE;
+	return VT_STATUS_CONTINUE;
 }
 
 int main(void) {
 	glfwSetErrorCallback(_vt_glfw_err_callback);
 
-	VT_AppState app = {};
+	vt_appstate app = {};
 	app.status = _vt_init(&app);
 
-	while (app.status == VT_APP_CONTINUE) {
+	while (app.status == VT_STATUS_CONTINUE) {
 		app.status = _vt_iterate(&app);
 	}
 	_vt_quit(&app);
 
-	if (app.status == VT_APP_FAILURE) {
+	if (app.status == VT_STATUS_FAILURE) {
 		LOG_ERROR("[VT] > App exited with a critical failure");
 		return EXIT_FAILURE;
 	}

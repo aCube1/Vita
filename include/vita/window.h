@@ -4,18 +4,19 @@
 #include "cglm/types-struct.h"
 #include "common.h"
 
-typedef struct VT_Window VT_Window;
 typedef struct GLFWwindow GLFWwindow;
 
-VT_Window *vt_create_window(i32 w, i32 h, const char *title);
-void vt_destroy_window(VT_Window *win);
+typedef struct vt_window {
+	GLFWwindow *handle;
 
-void vt_window_update(VT_Window *win);
+	ivec2s size;
+	ivec2s framesize;
+	bool should_close;
+} vt_window;
 
-bool vt_window_should_close(const VT_Window *win);
+vt_error vt_create_window(vt_window *win, i32 w, i32 h, const char *title);
+void vt_destroy_window(vt_window *win);
 
-GLFWwindow *vt_get_window_handle(const VT_Window *win);
-ivec2s vt_get_window_size(const VT_Window *win);
-ivec2s vt_get_window_framesize(const VT_Window *win);
+void vt_window_update(vt_window *win);
 
 #endif
