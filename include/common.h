@@ -5,12 +5,31 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(WIN32) || defined(_WIN32)
+#	define VT_TARGET_WINDOWS 1
+#elif defined(__APPLE__)
+#	include <TargetConditionals.h>
+#	if defined(TARGET_OS_MAC)
+#		define VT_TARGET_MACOS 1
+#	endif
+#elif defined(__linux__) || defined(__unix__)
+#	define VT_TARGET_LINUX 1
+#endif
+
+#if !defined(VT_TARGET_WINDOWS) && !defined(VT_TARGET_LINUX) && !defined(VT_TARGET_MACOS)
+#	error Could not detect target platform
+#endif
+
 #define VT_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define VT_MAX(a, b) ((a) > (b) ? (a) : (b))
 
+#ifndef VT_UNUSED
+#	define VT_UNUSED(x) ((void)x)
+#endif
+
 typedef enum vt_error {
 	VT_ERROR_NONE,
-	VT_ERROR_WINDOW_FAILURE,
+	VT_ERROR_GENERIC,
 	VT_ERROR_OUT_OF_MEMORY,
 	VT_ERROR_MEM_OVERFLOW,
 } vt_error;

@@ -43,7 +43,7 @@ vt_error vt_create_window(vt_window *win, i32 w, i32 h, const char *title) {
 
 	if (_primary_window) {
 		LOG_WARN("[WINDOW] > Multi-window is not supported");
-		return VT_ERROR_WINDOW_FAILURE;
+		return VT_ERROR_GENERIC;
 	}
 	win->size.x = w;
 	win->size.y = h;
@@ -62,7 +62,7 @@ vt_error vt_create_window(vt_window *win, i32 w, i32 h, const char *title) {
 	if (!win->handle) {
 		LOG_ERROR("[WINDOW] > Unable to create GLFW window handler");
 		vt_destroy_window(win);
-		return VT_ERROR_WINDOW_FAILURE;
+		return VT_ERROR_GENERIC;
 	}
 	glfwMakeContextCurrent(win->handle);
 

@@ -7,8 +7,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#define SOKOL_EXTERNAL_GL_LOADER
 #define SOKOL_GLCORE
+#define SOKOL_EXTERNAL_GL_LOADER
 #define SOKOL_IMPL
 #include "sokol/sokol_gfx.h"
 
