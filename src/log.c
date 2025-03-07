@@ -21,7 +21,7 @@ void vt_log_message(VT_LogLevel level, const char *file, i32 line, const char *m
 	char buf[16] = { 0 };
 	buf[strftime(buf, 16, "%H:%M:%S", ltime)] = '\0';
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 	fprintf(
 		stderr, "%s \x1b[90m%s:%d\x1b[0m %s[%s]\x1b[0m - ", buf, file, line,
 		_log_color[level], _log_name[level]

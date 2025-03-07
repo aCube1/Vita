@@ -51,7 +51,7 @@ bool vt_gpu_setup(void) {
 	);
 
 	sg_desc sgdesc = {};
-#ifdef _DEBUG
+#ifndef NDEBUG
 	sgdesc.logger.func = vt_slog_callback;
 #endif
 

@@ -30,11 +30,6 @@ target_include_directories(
 		${CMAKE_SOURCE_DIR}/include
 )
 
-target_compile_definitions(
-	${PROJECT_NAME} PRIVATE
-		$<$<CONFIG:Debug>:_DEBUG>
-)
-
 setup_libraries(${PROJECT_NAME})
 set_default_warnings(${PROJECT_NAME})
 
