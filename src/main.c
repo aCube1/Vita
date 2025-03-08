@@ -1,3 +1,4 @@
+#include "cglm/struct/affine-pre.h"
 #include "common.h"
 #include "log.h"
 #include "vita/gpu.h"
@@ -11,8 +12,6 @@
 #define WINDOW_DEFAULT_WIDTH  960
 #define WINDOW_DEFAULT_HEIGHT 540
 
-#define _DEBUG_RECT_COUNTS	  2040
-
 typedef enum vt_status {
 	VT_STATUS_FAILURE,
 	VT_STATUS_SUCCESS,
@@ -22,8 +21,6 @@ typedef enum vt_status {
 typedef struct vt_appstate {
 	vt_window window;
 	vt_renderer *render;
-	vec2s rects[_DEBUG_RECT_COUNTS];
-
 	vt_status status;
 } vt_appstate;
 
@@ -56,20 +53,6 @@ static vt_status _vt_init(vt_appstate *app) {
 	if (!app->render) {
 		LOG_ERROR("[VT] > Unable to create main 2D renderer");
 		return VT_STATUS_FAILURE;
-	}
-
-	u32 y = 0;
-	u32 x = 0;
-	for (u32 i = 0; i < _DEBUG_RECT_COUNTS; i += 1) {
-		app->rects[i].x = x;
-		app->rects[i].y = y;
-
-		if (x + 16 >= 960) {
-			y += 16;
-			x = 0;
-		} else {
-			x += 16;
-		}
 	}
 
 	return VT_STATUS_CONTINUE;
@@ -116,11 +99,7 @@ static void _vt_draw_quad(vt_renderer *render, f32 x, f32 y, f32 w, f32 h) {
 
 static vt_status _vt_iterate(vt_appstate *app) {
 	vt_render_begin(app->render, app->window.framesize);
-
-	for (u32 i = 0; i < _DEBUG_RECT_COUNTS; i += 1) {
-		_vt_draw_quad(app->render, app->rects[i].x, app->rects[i].y, 16, 16);
-	}
-
+	_vt_draw_quad(app->render, 960 / 2, 540 / 2, 128, 128);
 	vt_render_flush(app->render);
 	vt_render_end(app->render);
 

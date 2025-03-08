@@ -6,11 +6,13 @@
 #include "gpu/color.h"
 #include "sokol/sokol_gfx.h"
 
-#define VT_GPU_ATTR_POS	  0
-#define VT_GPU_ATTR_UV	  1
-#define VT_GPU_ATTR_COLOR 2
+#define VT_GPU_ATTR_POS		 0
+#define VT_GPU_ATTR_UV		 1
+#define VT_GPU_ATTR_COLOR	 2
+#define VT_GPU_UB_TEX0		 0
 
-#define VT_GPU_UB_TEX0	  0
+#define VT_GPU_VERTEX_SLOT	 0
+#define VT_GPU_FRAGMENT_SLOT 1
 
 typedef enum VT_PrimitiveType {
 	VT_PRIMITIVETYPE_POINTS = 0,

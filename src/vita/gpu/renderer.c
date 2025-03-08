@@ -2,6 +2,7 @@
 // https://github.com/edubart/sokol_gp/blob/master/sokol_gp.h
 
 #include "vita/gpu/renderer.h"
+
 #include "cglm/struct/cam.h"
 #include "cglm/struct/mat3.h"
 #include "cglm/struct/mat4.h"
@@ -262,7 +263,7 @@ void _vt_flush_draw(
 				uniform->ptr,
 				uniform->vs_size,
 			};
-			sg_apply_uniforms(SG_SHADERSTAGE_VERTEX, &uniform_range);
+			sg_apply_uniforms(VT_GPU_VERTEX_SLOT, &uniform_range);
 		}
 
 		if (uniform->fs_size > 0) {
@@ -270,7 +271,7 @@ void _vt_flush_draw(
 				((u8 *)uniform->ptr) + uniform->vs_size,
 				uniform->fs_size,
 			};
-			sg_apply_uniforms(SG_SHADERSTAGE_FRAGMENT, &uniform_range);
+			sg_apply_uniforms(VT_GPU_FRAGMENT_SLOT, &uniform_range);
 		}
 	}
 
@@ -368,7 +369,7 @@ void vt_set_render_uniform(
 
 	VT_Uniform *uniform = &render->state.uniform;
 	usize size = vs_size + fs_size;
-	if (uniform->vs_size + uniform->fs_size < size) {
+	if (size > uniform->vs_size + uniform->fs_size) {
 		void *ptr = realloc(uniform->ptr, size);
 		if (!ptr) {
 			render->error = VT_ERROR_OUT_OF_MEMORY;
