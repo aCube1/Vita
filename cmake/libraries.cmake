@@ -9,18 +9,9 @@ function(setup_libraries target)
 	option(CGLM_STATIC "" ON)
 	add_subdirectory(${_LIBS_DIR}/cglm)
 
-	target_sources(
-		${target} PRIVATE
-			${_LIBS_DIR}/sokol/sokol_gfx.h
-			${_LIBS_DIR}/glad/include/KHR/khrplatform.h
-			${_LIBS_DIR}/glad/include/glad/gl.h
-			${_LIBS_DIR}/glad/src/gl.c
-	)
-
 	target_include_directories(
 		${target} PRIVATE
 			${_LIBS_DIR}
-			${_LIBS_DIR}/glad/include
 	)
 
 	target_link_libraries(${target} PRIVATE glfw cglm)

@@ -1,5 +1,4 @@
 #version 410 core
-#extension GL_ARB_shading_language_420pack: enable
 
 in vec3 a_pos;
 in vec2 a_uv;

@@ -1,7 +1,6 @@
 #version 410 core
-#extension GL_ARB_shading_language_420pack: enable
 
-layout(binding = 0) uniform sampler2D u_tex0;
+uniform sampler2D u_tex0;
 
 in vec4 f_color;
 in vec2 f_uv;

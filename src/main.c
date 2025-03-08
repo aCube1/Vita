@@ -46,8 +46,9 @@ static vt_status _vt_init(vt_appstate *app) {
 		return VT_STATUS_FAILURE;
 	}
 
-	if (!vt_gpu_setup()) {
-		LOG_ERROR("[VT] > Unable to setup GPU handler");
+	err = vt_gpu_init_resources();
+	if (err != VT_ERROR_NONE) {
+		LOG_ERROR("[GPU] > Failed to alloc default resources");
 		return VT_STATUS_FAILURE;
 	}
 
@@ -75,12 +76,12 @@ static vt_status _vt_init(vt_appstate *app) {
 }
 
 static void _vt_quit(vt_appstate *app) {
-	vt_destroy_window(&app->window);
 	if (app->render) {
 		vt_destroy_renderer(app->render);
 	}
 
-	vt_gpu_shutdown();
+	vt_gpu_clean_resources();
+	vt_destroy_window(&app->window);
 	glfwTerminate();
 }
 

@@ -2,9 +2,9 @@
 #define _VT_VITA_GPU_H
 
 #include "cglm/types-struct.h"
+#include "glad/gl.h"
 #include "gpu/color.h"
 #include "sokol/sokol_gfx.h"
-#include <glad/gl.h>
 
 #define VT_GPU_ATTR_POS	  0
 #define VT_GPU_ATTR_UV	  1
@@ -33,8 +33,8 @@ typedef struct VT_Uniform {
 	void *ptr;
 } VT_Uniform;
 
-bool vt_gpu_setup(void);
-void vt_gpu_shutdown(void);
+vt_error vt_gpu_init_resources(void);
+void vt_gpu_clean_resources(void);
 
 sg_image vt_gpu_get_white_image(void);
 sg_sampler vt_gpu_get_nearest_sampler(void);

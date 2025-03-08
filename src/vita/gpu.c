@@ -2,25 +2,6 @@
 
 #include "common.h"
 #include "log.h"
-#include <string.h>
-
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
-#define SOKOL_GLCORE
-#define SOKOL_EXTERNAL_GL_LOADER
-#define SOKOL_IMPL
-#include "sokol/sokol_gfx.h"
-
-struct VT_GPU {
-	bool was_init;
-
-	sg_image white_img;
-	sg_sampler nearest_smp;
-	sg_shader common_shdr;
-};
-
-static struct VT_GPU _gpu = { 0 };
 
 static const char _common_vs_source[] = {
 #embed "../assets/shaders/common.vert.glsl"
@@ -32,44 +13,28 @@ static const char _common_fs_source[] = {
 	, '\0'
 };
 
-bool vt_gpu_setup(void) {
-	if (_gpu.was_init) {
-		return true;
-	}
-	memset(&_gpu, 0, sizeof(struct VT_GPU));
-	_gpu.was_init = true;
+struct vt_gpu {
+	sg_image white_img;
+	sg_sampler nearest_smp;
+	sg_shader common_shdr;
+};
 
-	i32 version = gladLoadGL(glfwGetProcAddress);
-	if (version == 0) {
-		LOG_ERROR("[GPU] > Failed to create OpenGL context");
-		vt_gpu_shutdown();
-		return false;
-	}
-	LOG_INFO(
-		"[GPU] > Loaded API: OpenGL %d.%d", GLAD_VERSION_MAJOR(version),
-		GLAD_VERSION_MINOR(version)
-	);
+static struct vt_gpu _gpu = { 0 };
 
-	sg_desc sgdesc = {};
-#ifndef NDEBUG
-	sgdesc.logger.func = vt_slog_callback;
-#endif
+vt_error vt_gpu_init_resources(void) {
+	_gpu.white_img = vt_gpu_get_white_image();
+	_gpu.nearest_smp = vt_gpu_get_nearest_sampler();
+	_gpu.common_shdr = vt_gpu_get_common_shader();
 
-	sg_setup(&sgdesc);
-	if (!sg_isvalid()) {
-		LOG_ERROR("[GPU] > Failed to setup SokolGFX");
-		vt_gpu_shutdown();
-		return false;
+	if (_gpu.white_img.id == SG_INVALID_ID || _gpu.nearest_smp.id == SG_INVALID_ID
+		|| _gpu.common_shdr.id == SG_INVALID_ID) {
+		return VT_ERROR_GENERIC;
 	}
 
-	return true;
+	return VT_ERROR_NONE;
 }
 
-void vt_gpu_shutdown(void) {
-	if (!_gpu.was_init) {
-		return;
-	}
-
+void vt_gpu_clean_resources(void) {
 	if (sg_query_image_state(_gpu.white_img) != SG_RESOURCESTATE_INVALID) {
 		sg_destroy_image(_gpu.white_img);
 	}
@@ -79,12 +44,6 @@ void vt_gpu_shutdown(void) {
 	if (sg_query_shader_state(_gpu.common_shdr) != SG_RESOURCESTATE_INVALID) {
 		sg_destroy_shader(_gpu.common_shdr);
 	}
-
-	if (sg_isvalid()) {
-		sg_shutdown();
-	}
-
-	_gpu.was_init = false;
 }
 
 sg_image vt_gpu_get_white_image(void) {
