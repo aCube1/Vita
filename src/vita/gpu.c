@@ -132,23 +132,23 @@ sg_shader vt_gpu_get_common_shader(void) {
 	return _gpu.common_shdr;
 }
 
-sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primitive) {
+sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, vt_primitive_type primitive) {
 	sg_primitive_type primitive_type = primitive + 1;
 
 	sg_pipeline_desc pipdesc = {
 		.shader = shdr,
 		.layout = {
-			.buffers[0].stride = sizeof(VT_Vertex),
+			.buffers[0].stride = sizeof(vt_vertex),
 			.attrs[VT_GPU_ATTR_POS] = {
-				.offset = offsetof(VT_Vertex, position),
+				.offset = offsetof(vt_vertex, position),
 				.format = SG_VERTEXFORMAT_FLOAT3,
 			},
 			.attrs[VT_GPU_ATTR_UV] = {
-				.offset = offsetof(VT_Vertex, texcoord),
+				.offset = offsetof(vt_vertex, texcoord),
 				.format = SG_VERTEXFORMAT_FLOAT2,
 			},
 			.attrs[VT_GPU_ATTR_COLOR] = {
-				.offset = offsetof(VT_Vertex, color),
+				.offset = offsetof(vt_vertex, color),
 				.format = SG_VERTEXFORMAT_UBYTE4N,
 			},
 		},

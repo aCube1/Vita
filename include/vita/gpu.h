@@ -14,26 +14,26 @@
 #define VT_GPU_VERTEX_SLOT	 0
 #define VT_GPU_FRAGMENT_SLOT 1
 
-typedef enum VT_PrimitiveType {
+typedef enum vt_primitive_type {
 	VT_PRIMITIVETYPE_POINTS = 0,
 	VT_PRIMITIVETYPE_LINES,
 	VT_PRIMITIVETYPE_LINE_STRIP,
 	VT_PRIMITIVETYPE_TRIANGLES,
 	VT_PRIMITIVETYPE_TRIANGLE_STRIP,
 	_VT_PRIMITIVETYPE_COUNT,
-} VT_PrimitiveType;
+} vt_primitive_type;
 
-typedef struct VT_Vertex {
+typedef struct vt_vertex {
 	vec3s position;
 	vec2s texcoord;
 	u8color color;
-} VT_Vertex;
+} vt_vertex;
 
-typedef struct VT_Uniform {
+typedef struct vt_uniform {
 	usize vs_size;
 	usize fs_size;
 	void *ptr;
-} VT_Uniform;
+} vt_uniform;
 
 vt_error vt_gpu_init_resources(void);
 void vt_gpu_clean_resources(void);
@@ -42,6 +42,6 @@ sg_image vt_gpu_get_white_image(void);
 sg_sampler vt_gpu_get_nearest_sampler(void);
 sg_shader vt_gpu_get_common_shader(void);
 
-sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, VT_PrimitiveType primitive);
+sg_pipeline vt_gpu_make_pipeline(sg_shader shdr, vt_primitive_type primitive);
 
 #endif

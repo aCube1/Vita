@@ -23,23 +23,23 @@ enum {
 	_VT_COMMANDTYPE_DRAW,
 };
 
-typedef struct VT_DrawCall {
+typedef struct vt_drawcall {
 	sg_pipeline pipeline;
 	frect region; // Screen region to be drawing to
 	u32 vertex_count;
 	u32 vertex_idx;
 	u32 uniform_idx;
-} VT_DrawCall;
+} vt_drawcall;
 
-typedef struct VT_RenderCommand {
+typedef struct vt_render_command {
 	u32 type;
 
 	union {
 		irect viewport;
 		irect scissor;
-		VT_DrawCall draw;
+		vt_drawcall draw;
 	};
-} VT_RenderCommand;
+} vt_render_command;
 
 struct vt_renderer {
 	vt_error error;
@@ -49,9 +49,9 @@ struct vt_renderer {
 	u32 vertices_count;
 	u32 commands_count;
 	u32 uniforms_count;
-	VT_Vertex *vertices;
-	VT_RenderCommand *commands;
-	VT_Uniform *uniforms;
+	vt_vertex *vertices;
+	vt_render_command *commands;
+	vt_uniform *uniforms;
 
 	u32 cur_state;
 	u32 cur_transform;
@@ -64,7 +64,7 @@ struct vt_renderer {
 };
 
 static sg_pipeline _vt_lookup_pipeline(
-	vt_renderer *render, VT_PrimitiveType primitive_type
+	vt_renderer *render, vt_primitive_type primitive_type
 ) {
 	u32 pip_idx = primitive_type;
 	if (render->pipelines[pip_idx].id != SG_INVALID_ID) {
@@ -92,9 +92,9 @@ vt_renderer *vt_create_renderer(void) {
 	render->uniforms_count = _VT_DEFAULT_MAX_COMMANDS;
 
 	// Alloc vertices memory, commands queue and uniform memory
-	render->vertices = calloc(render->vertices_count, sizeof(VT_Vertex));
-	render->commands = calloc(render->commands_count, sizeof(VT_RenderCommand));
-	render->uniforms = calloc(render->commands_count, sizeof(VT_Uniform));
+	render->vertices = calloc(render->vertices_count, sizeof(vt_vertex));
+	render->commands = calloc(render->commands_count, sizeof(vt_render_command));
+	render->uniforms = calloc(render->commands_count, sizeof(vt_uniform));
 	if (!render->vertices || !render->commands || !render->uniforms) {
 		LOG_ERROR("[RENDER] > Failed to alloc resources memory");
 		vt_destroy_renderer(render);
@@ -113,7 +113,7 @@ vt_renderer *vt_create_renderer(void) {
 
 	// Setup buffers
 	sg_buffer_desc bufdesc = {
-		.size = render->vertices_count * sizeof(VT_Vertex),
+		.size = render->vertices_count * sizeof(vt_vertex),
 		.type = SG_BUFFERTYPE_VERTEXBUFFER,
 		.usage = SG_USAGE_STREAM,
 		.label = "vt_render.vertex_buffer",
@@ -229,7 +229,7 @@ void vt_render_end(vt_renderer *render) {
 
 void _vt_flush_draw(
 	vt_renderer *render,
-	VT_DrawCall *draw,
+	vt_drawcall *draw,
 	sg_bindings *binds,
 	u32 *cur_pipeline,
 	u32 *cur_uniform
@@ -257,7 +257,7 @@ void _vt_flush_draw(
 	}
 
 	if (apply_uniforms && *cur_uniform != UINT32_MAX) {
-		VT_Uniform *uniform = &render->uniforms[*cur_uniform];
+		vt_uniform *uniform = &render->uniforms[*cur_uniform];
 		if (uniform->vs_size > 0) {
 			sg_range uniform_range = {
 				uniform->ptr,
@@ -300,7 +300,7 @@ void vt_render_flush(vt_renderer *render) {
 
 	sg_range vertex_range = {
 		.ptr = &render->vertices[render->state._base_vertex],
-		.size = (end_vertex - render->state._base_vertex) * sizeof(VT_Vertex),
+		.size = (end_vertex - render->state._base_vertex) * sizeof(vt_vertex),
 	};
 	u32 offset = sg_append_buffer(render->vertex_buf, &vertex_range);
 	if (sg_query_buffer_overflow(render->vertex_buf)) {
@@ -325,7 +325,7 @@ void vt_render_flush(vt_renderer *render) {
 
 	// Flush all commands
 	for (u32 i = render->state._base_command; i < end_cmd; i += 1) {
-		VT_RenderCommand *cmd = &render->commands[i];
+		vt_render_command *cmd = &render->commands[i];
 
 		switch (cmd->type) {
 		case _VT_COMMANDTYPE_VIEWPORT: {
@@ -337,7 +337,7 @@ void vt_render_flush(vt_renderer *render) {
 			sg_apply_scissor_rect(scissor->x, scissor->y, scissor->w, scissor->h, true);
 		} break;
 		case _VT_COMMANDTYPE_DRAW: {
-			VT_DrawCall *draw = &cmd->draw;
+			vt_drawcall *draw = &cmd->draw;
 			if (draw->vertex_count == 0) {
 				continue; // Ignore empty drawcalls
 			}
@@ -367,7 +367,7 @@ void vt_set_render_uniform(
 ) {
 	assert(render);
 
-	VT_Uniform *uniform = &render->state.uniform;
+	vt_uniform *uniform = &render->state.uniform;
 	usize size = vs_size + fs_size;
 	if (size > uniform->vs_size + uniform->fs_size) {
 		void *ptr = realloc(uniform->ptr, size);
@@ -392,19 +392,19 @@ void vt_set_render_uniform(
 	uniform->fs_size = fs_size;
 }
 
-static VT_Vertex *_vt_get_vertices(vt_renderer *render, u32 count) {
+static vt_vertex *_vt_get_vertices(vt_renderer *render, u32 count) {
 	if (render->cur_vertex + count > render->vertices_count) {
 		LOG_ERROR("[RENDER] > Vertices buffer overflowed");
 		render->error = VT_ERROR_MEM_OVERFLOW;
 		return nullptr;
 	}
 
-	VT_Vertex *vertices = &render->vertices[render->cur_vertex];
+	vt_vertex *vertices = &render->vertices[render->cur_vertex];
 	render->cur_vertex += count;
 	return vertices;
 }
 
-static VT_RenderCommand *_vt_get_prev_command(vt_renderer *render, u32 count) {
+static vt_render_command *_vt_get_prev_command(vt_renderer *render, u32 count) {
 	// Don't underflow command queue
 	if (render->cur_command - render->state._base_command < count) {
 		return nullptr;
@@ -413,17 +413,17 @@ static VT_RenderCommand *_vt_get_prev_command(vt_renderer *render, u32 count) {
 	return &render->commands[render->cur_command - count];
 }
 
-static VT_RenderCommand *_vt_get_next_command(vt_renderer *render) {
+static vt_render_command *_vt_get_next_command(vt_renderer *render) {
 	if (render->cur_command == render->commands_count) {
 		return nullptr;
 	}
 
-	VT_RenderCommand *cmd = &render->commands[render->cur_command];
+	vt_render_command *cmd = &render->commands[render->cur_command];
 	render->cur_command += 1;
 	return cmd;
 }
 
-static bool _vt_is_uniform_eq(VT_Uniform *s1, VT_Uniform *s2) {
+static bool _vt_is_uniform_eq(vt_uniform *s1, vt_uniform *s2) {
 	if (!s1 || !s2) {
 		return false;
 	}
@@ -442,17 +442,17 @@ static bool _vt_try_merge_commands(
 	vt_renderer *render,
 	sg_pipeline pip,
 	frect region,
-	VT_Uniform *uniform,
+	vt_uniform *uniform,
 	u32 vertex_idx,
 	u32 vertex_count
 ) {
-	VT_RenderCommand *prev_cmd = nullptr;
-	VT_RenderCommand *inter_cmds[_VT_BATCH_MERGING_DEPTH] = {};
+	vt_render_command *prev_cmd = nullptr;
+	vt_render_command *inter_cmds[_VT_BATCH_MERGING_DEPTH] = {};
 	u32 inter_cmd_count = 0;
 
 	u32 search_depth = _VT_BATCH_MERGING_DEPTH;
 	for (u32 depth = 0; depth < search_depth; depth += 1) {
-		VT_RenderCommand *cmd = _vt_get_prev_command(render, depth + 1);
+		vt_render_command *cmd = _vt_get_prev_command(render, depth + 1);
 
 		// Don't proceed if the command isn't a drawing command, or doesn't exist
 		if (!cmd || cmd->type != _VT_COMMANDTYPE_DRAW) {
@@ -466,7 +466,7 @@ static bool _vt_try_merge_commands(
 		}
 
 		if (cmd->draw.pipeline.id == pip.id) {
-			VT_Uniform *cmd_uniform = &render->uniforms[cmd->draw.uniform_idx];
+			vt_uniform *cmd_uniform = &render->uniforms[cmd->draw.uniform_idx];
 
 			if (!uniform || _vt_is_uniform_eq(uniform, cmd_uniform)) {
 				prev_cmd = cmd;
@@ -523,12 +523,12 @@ static bool _vt_try_merge_commands(
 			// Insert vertices after previous vertices
 			memmove(
 				&render->vertices[prev_end_vertex + prev_vertex_count],
-				&render->vertices[prev_end_vertex], prev_vertex_count * sizeof(VT_Vertex)
+				&render->vertices[prev_end_vertex], prev_vertex_count * sizeof(vt_vertex)
 			);
 			memcpy(
 				&render->vertices[prev_end_vertex],
 				&render->vertices[vertex_idx + vertex_count],
-				vertex_count * sizeof(VT_Vertex)
+				vertex_count * sizeof(vt_vertex)
 			);
 
 			// Offset vertices index of intermediate commands
@@ -548,11 +548,10 @@ static bool _vt_try_merge_commands(
 		assert(inter_cmd_count > 0);
 
 		// Append a new draw command
-		VT_RenderCommand *cmd = _vt_get_next_command(render);
+		vt_render_command *cmd = _vt_get_next_command(render);
 		if (!cmd) {
 			return false;
 		}
-
 		u32 prev_vertex_count = prev_cmd->draw.vertex_count;
 
 		// Check if there's enough vertices space
@@ -568,11 +567,11 @@ static bool _vt_try_merge_commands(
 		// Batch previous and current vertices in the same memory region
 		memmove(
 			&render->vertices[vertex_idx + prev_vertex_count],
-			&render->vertices[vertex_idx], vertex_count * sizeof(VT_Vertex)
+			&render->vertices[vertex_idx], vertex_count * sizeof(vt_vertex)
 		);
 		memcpy(
 			&render->vertices[vertex_idx], &render->vertices[prev_cmd->draw.vertex_idx],
-			prev_vertex_count * sizeof(VT_Vertex)
+			prev_vertex_count * sizeof(vt_vertex)
 		);
 
 		// Update render region and vertices
@@ -604,10 +603,10 @@ static void _vt_queue_draw(
 	frect region,
 	u32 vertex_idx,
 	u32 vertex_count,
-	VT_PrimitiveType primitive
+	vt_primitive_type primitive
 ) {
 	// Override pipeline if the state has set one
-	VT_Uniform *uniform = nullptr;
+	vt_uniform *uniform = nullptr;
 	if (render->state.pipeline.id != SG_INVALID_ID) {
 		pip = render->state.pipeline;
 		uniform = &render->state.uniform;
@@ -630,14 +629,14 @@ static void _vt_queue_draw(
 	// Find uniform index, try to reuse previous uniforms if possible
 	u32 uniform_idx = UINT32_MAX;
 	if (uniform && uniform->ptr) {
-		VT_Uniform *prev_uniform = nullptr;
+		vt_uniform *prev_uniform = nullptr;
 		if (render->cur_uniform > 0) {
 			prev_uniform = &render->uniforms[render->cur_uniform - 1];
 		}
 
 		if (!prev_uniform && !_vt_is_uniform_eq(uniform, prev_uniform)) {
 			// Append new uniform
-			VT_Uniform *next_uniform = nullptr;
+			vt_uniform *next_uniform = nullptr;
 			if (render->cur_uniform < render->uniforms_count) {
 				next_uniform = &render->uniforms[render->cur_uniform];
 				render->cur_uniform += 1;
@@ -655,7 +654,7 @@ static void _vt_queue_draw(
 	}
 
 	// Register new draw command
-	VT_RenderCommand *cmd = _vt_get_next_command(render);
+	vt_render_command *cmd = _vt_get_next_command(render);
 	if (!cmd) {
 		render->cur_vertex -= vertex_count; // Rewind vertices
 		return;
@@ -669,7 +668,7 @@ static void _vt_queue_draw(
 }
 
 void vt_render_geometry(
-	vt_renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
+	vt_renderer *render, vt_primitive_type primitive, const vt_vertex *vertices, u32 count
 ) {
 	assert(render && vertices);
 	assert(render->cur_state > 0);
@@ -679,7 +678,7 @@ void vt_render_geometry(
 	}
 
 	u32 vertex_idx = render->cur_vertex;
-	VT_Vertex *v = _vt_get_vertices(render, count);
+	vt_vertex *v = _vt_get_vertices(render, count);
 	if (!v) {
 		return;
 	}

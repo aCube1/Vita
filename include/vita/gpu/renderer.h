@@ -15,7 +15,7 @@ typedef struct vt_batchstate {
 	sg_pipeline pipeline;
 	sg_pass render_pass;
 
-	VT_Uniform uniform;
+	vt_uniform uniform;
 
 	u32 _base_vertex;
 	u32 _base_command;
@@ -43,7 +43,7 @@ void vt_set_render_uniform(
 );
 
 void vt_render_geometry(
-	vt_renderer *render, VT_PrimitiveType primitive, const VT_Vertex *vertices, u32 count
+	vt_renderer *render, vt_primitive_type primitive, const vt_vertex *vertices, u32 count
 );
 
 #endif

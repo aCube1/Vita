@@ -84,7 +84,7 @@ static void _vt_draw_quad(vt_renderer *render, f32 x, f32 y, f32 w, f32 h) {
 		{ { 0.0f, 1.0f } }, // Bottom left
 	};
 
-	VT_Vertex vertices[6] = {
+	vt_vertex vertices[6] = {
 		{ quad[0], quad_uv[0], VT_COLOR_RED },	 // Top left
 		{ quad[1], quad_uv[1], VT_COLOR_GREEN }, // Top right
 		{ quad[2], quad_uv[2], VT_COLOR_BLUE },	 // Bottom right
