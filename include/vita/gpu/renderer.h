@@ -4,6 +4,7 @@
 #include "cglm/types-struct.h"
 #include "common.h"
 #include "vita/gpu.h"
+#include "vita/gpu/shader.h"
 
 typedef struct vt_batchstate {
 	ivec2s framesize;
@@ -14,7 +15,6 @@ typedef struct vt_batchstate {
 	u8color color;
 	sg_pipeline pipeline;
 	sg_pass render_pass;
-
 	vt_uniform uniform;
 
 	u32 _base_vertex;

@@ -20,12 +20,13 @@
 #	error Could not detect target platform
 #endif
 
+// Utility macros
+#define VT_UNUSED(x) ((void)x)
+
 #define VT_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define VT_MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#ifndef VT_UNUSED
-#	define VT_UNUSED(x) ((void)x)
-#endif
+#define VT_DEF(a, b) ((a) > 0 ? (a) : (b))
 
 typedef enum vt_error {
 	VT_ERROR_NONE,
