@@ -27,10 +27,10 @@ enum {
 
 typedef struct _vt_drawcall {
 	sg_pipeline pipeline;
+	vt_uniform uniform_blocks[SG_MAX_UNIFORMBLOCK_BINDSLOTS];
 	frect region; // Screen region to be drawing to
 	u32 vertex_count;
 	u32 vertex_idx;
-	u32 uniform_idx;
 } _vt_drawcall;
 
 typedef struct _vt_render_command {
@@ -53,7 +53,7 @@ struct vt_renderer {
 	u32 uniforms_count;
 	vt_vertex *vertices;
 	_vt_render_command *commands;
-	vt_uniform *uniforms;
+	vt_uniforms_pool uniforms;
 
 	u32 cur_state;
 	u32 cur_transform;
@@ -87,18 +87,25 @@ vt_renderer *vt_create_renderer(void) {
 		LOG_ERROR("[RENDER] > Failed to alloc memory");
 		return nullptr;
 	}
-	render->error = VT_ERROR_OUT_OF_MEMORY;
+	render->error = VT_ERROR_NONE;
 
 	render->vertices_count = _VT_DEFAULT_MAX_VERTICES;
 	render->commands_count = _VT_DEFAULT_MAX_COMMANDS;
 	render->uniforms_count = _VT_DEFAULT_MAX_COMMANDS;
 
-	// Alloc vertices memory, commands queue and uniform memory
 	render->vertices = calloc(render->vertices_count, sizeof(vt_vertex));
 	render->commands = calloc(render->commands_count, sizeof(_vt_render_command));
-	render->uniforms = calloc(render->commands_count, sizeof(vt_uniform));
-	if (!render->vertices || !render->commands || !render->uniforms) {
+	if (!render->vertices || !render->commands) {
 		LOG_ERROR("[RENDER] > Failed to alloc resources memory");
+		vt_destroy_renderer(render);
+		return nullptr;
+	}
+
+	render->error = vt_init_uniforms_pool(
+		&render->uniforms, render->commands_count * VT_UNIFORM_BINDSLOTS_COUNT
+	);
+	if (render->error != VT_ERROR_NONE) {
+		LOG_ERROR("[RENDER] > Failed to initialize uniforms pool");
 		vt_destroy_renderer(render);
 		return nullptr;
 	}
@@ -153,16 +160,7 @@ void vt_destroy_renderer(vt_renderer *render) {
 		free(render->commands);
 	}
 
-	if (render->uniforms) {
-		for (u32 i = 0; i < render->commands_count; i += 1) {
-			void *ptr = render->uniforms[i].ptr;
-			if (ptr) {
-				free(ptr);
-			}
-		}
-		free(render->uniforms);
-	}
-
+	vt_destroy_uniforms_pool(&render->uniforms);
 	free(render);
 }
 
@@ -197,10 +195,13 @@ void vt_render_begin(vt_renderer *render, ivec2s framesize) {
 	render->state.transform = GLMS_MAT3_IDENTITY;
 	render->state.mvp = render->state.projview;
 	render->state.color = VT_COLOR_WHITE;
-	render->state.uniform.ptr = nullptr;
 	render->state._base_vertex = render->cur_vertex;
 	render->state._base_command = render->cur_command;
 	render->state._base_uniform = render->cur_uniform;
+
+	memset(
+		&render->state.uniform_blocks, 0, sizeof(vt_uniform) * VT_UNIFORM_BINDSLOTS_COUNT
+	);
 
 	render->state.render_pass = (sg_pass) {
 		.action.colors[0] = {
@@ -227,57 +228,6 @@ void vt_render_end(vt_renderer *render) {
 	// Restore previous state
 	render->cur_state -= 1;
 	render->state = render->state_stack[render->cur_state];
-}
-
-void _vt_flush_draw(
-	vt_renderer *render,
-	_vt_drawcall *draw,
-	sg_bindings *binds,
-	u32 *cur_pipeline,
-	u32 *cur_uniform
-) {
-	bool apply_bindings = false;
-	bool apply_uniforms = false;
-
-	// Reapply bindings if pipeline is different from current
-	if (draw->pipeline.id != *cur_pipeline) {
-		sg_apply_pipeline(draw->pipeline);
-		*cur_pipeline = draw->pipeline.id;
-		*cur_uniform = UINT32_MAX;
-		apply_bindings = true;
-	}
-
-	// Apply bindings
-	if (apply_bindings) {
-		sg_apply_bindings(binds);
-		apply_uniforms = true;
-	}
-
-	if (draw->uniform_idx != *cur_uniform) {
-		*cur_uniform = draw->uniform_idx;
-		apply_uniforms = true;
-	}
-
-	if (apply_uniforms && *cur_uniform != UINT32_MAX) {
-		vt_uniform *uniform = &render->uniforms[*cur_uniform];
-		if (uniform->vs_size > 0) {
-			sg_range uniform_range = {
-				uniform->ptr,
-				uniform->vs_size,
-			};
-			sg_apply_uniforms(VT_GPU_VERTEX_SLOT, &uniform_range);
-		}
-
-		if (uniform->fs_size > 0) {
-			sg_range uniform_range = {
-				((u8 *)uniform->ptr) + uniform->vs_size,
-				uniform->fs_size,
-			};
-			sg_apply_uniforms(VT_GPU_FRAGMENT_SLOT, &uniform_range);
-		}
-	}
-
-	sg_draw(draw->vertex_idx - render->state._base_vertex, draw->vertex_count, 1);
 }
 
 void vt_render_flush(vt_renderer *render) {
@@ -320,7 +270,6 @@ void vt_render_flush(vt_renderer *render) {
 	};
 
 	u32 cur_pipeline = SG_INVALID_ID;
-	u32 cur_uniform = UINT32_MAX;
 
 	// Begin state render pass before drawing
 	sg_begin_pass(&render->state.render_pass);
@@ -329,26 +278,50 @@ void vt_render_flush(vt_renderer *render) {
 	for (u32 i = render->state._base_command; i < end_cmd; i += 1) {
 		_vt_render_command *cmd = &render->commands[i];
 
-		switch (cmd->type) {
-		case _VT_COMMANDTYPE_VIEWPORT: {
+		if (cmd->type == _VT_COMMANDTYPE_VIEWPORT) {
 			irect *viewport = &cmd->viewport;
 			sg_apply_viewport(viewport->x, viewport->y, viewport->w, viewport->h, true);
-		} break;
-		case _VT_COMMANDTYPE_SCISSOR: {
+		}
+
+		if (cmd->type == _VT_COMMANDTYPE_SCISSOR) {
 			irect *scissor = &cmd->scissor;
 			sg_apply_scissor_rect(scissor->x, scissor->y, scissor->w, scissor->h, true);
-		} break;
-		case _VT_COMMANDTYPE_DRAW: {
+		}
+
+		if (cmd->type == _VT_COMMANDTYPE_DRAW) {
 			_vt_drawcall *draw = &cmd->draw;
 			if (draw->vertex_count == 0) {
 				continue; // Ignore empty drawcalls
 			}
 
-			_vt_flush_draw(render, draw, &binds, &cur_pipeline, &cur_uniform);
-		} break;
+			bool apply_bindings = false;
+			bool apply_uniforms = false;
+
+			// Reapply bindings if pipeline is different from current
+			if (draw->pipeline.id != cur_pipeline) {
+				sg_apply_pipeline(draw->pipeline);
+				cur_pipeline = draw->pipeline.id;
+				apply_bindings = true;
+			}
+
+			// Apply bindings
+			if (apply_bindings) {
+				sg_apply_bindings(&binds);
+				apply_uniforms = true;
+			}
+
+			// Apply all uniforms
+			if (apply_uniforms) {
+				for (i32 i = 0; i < VT_UNIFORM_BINDSLOTS_COUNT; i += 1) {
+					vt_apply_uniform(&render->uniforms, i, draw->uniform_blocks[i]);
+				}
+			}
+
+			sg_draw(draw->vertex_idx - render->state._base_vertex, draw->vertex_count, 1);
 		}
 	}
 	sg_end_pass();
+	vt_reset_uniforms_pool(&render->uniforms);
 }
 
 void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pip) {
@@ -356,42 +329,28 @@ void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pip) {
 	render->state.pipeline = pip;
 
 	// Reset uniforms
-	render->state.uniform.vs_size = 0;
-	render->state.uniform.fs_size = 0;
+	memset(
+		&render->state.uniform_blocks, 0, sizeof(vt_uniform) * VT_UNIFORM_BINDSLOTS_COUNT
+	);
 }
 
-void vt_set_render_uniform(
-	vt_renderer *render,
-	const void *vs_data,
-	usize vs_size,
-	const void *fs_data,
-	usize fs_size
-) {
+void vt_set_render_uniform(vt_renderer *render, i32 ubslot, const sg_range *data) {
 	assert(render);
 
-	vt_uniform *uniform = &render->state.uniform;
-	usize size = vs_size + fs_size;
-	if (size > uniform->vs_size + uniform->fs_size) {
-		void *ptr = realloc(uniform->ptr, size);
-		if (!ptr) {
-			render->error = VT_ERROR_OUT_OF_MEMORY;
-			return;
-		}
-		uniform->ptr = ptr;
+	// Reset slot if data is null
+	if (!data) {
+		render->state.uniform_blocks[ubslot].id = VT_INVALID_SLOT_ID;
+		return;
 	}
 
-	if (vs_size > 0) {
-		assert(vs_data);
-		memcpy(uniform->ptr, vs_data, vs_size);
+	vt_uniform uniform = vt_create_uniform(&render->uniforms, data);
+	if (uniform.id == VT_INVALID_SLOT_ID) {
+		LOG_ERROR("[RENDER] > Failed to set uniform on slot: %d", ubslot);
+		render->error = VT_ERROR_GENERIC;
+		return;
 	}
 
-	if (fs_size > 0) {
-		assert(fs_data);
-		memcpy(((u8 *)uniform->ptr) + vs_size, fs_data, fs_size);
-	}
-
-	uniform->vs_size = vs_size;
-	uniform->fs_size = fs_size;
+	render->state.uniform_blocks[ubslot] = uniform;
 }
 
 static vt_vertex *_vt_get_vertices(vt_renderer *render, u32 count) {
@@ -423,16 +382,6 @@ static _vt_render_command *_vt_get_next_command(vt_renderer *render) {
 	_vt_render_command *cmd = &render->commands[render->cur_command];
 	render->cur_command += 1;
 	return cmd;
-}
-
-static bool _vt_is_uniform_eq(vt_uniform *s1, vt_uniform *s2) {
-	if (!s1 || !s2) {
-		return false;
-	}
-
-	usize size = s1->vs_size + s1->fs_size;
-	return s1->vs_size == s2->vs_size && s1->fs_size == s2->fs_size
-		   && !memcmp(s1->ptr, s2->ptr, size);
 }
 
 static inline bool _vt_do_region_overlap(frect ra, frect rb) {
@@ -467,10 +416,13 @@ static bool _vt_try_merge_commands(
 			continue;
 		}
 
-		if (cmd->draw.pipeline.id == pip.id) {
-			vt_uniform *cmd_uniform = &render->uniforms[cmd->draw.uniform_idx];
+		if (cmd->draw.pipeline.id == pip.id || uniform) {
+			vt_uniform *cmd_uniform = cmd->draw.uniform_blocks;
+			bool is_uniform_eq = !memcmp(
+				uniform, cmd_uniform, sizeof(vt_uniform) * VT_UNIFORM_BINDSLOTS_COUNT
+			);
 
-			if (!uniform || _vt_is_uniform_eq(uniform, cmd_uniform)) {
+			if (is_uniform_eq) {
 				prev_cmd = cmd;
 				break;
 			}
@@ -588,9 +540,12 @@ static bool _vt_try_merge_commands(
 		cmd->type = _VT_COMMANDTYPE_DRAW;
 		cmd->draw.pipeline = pip;
 		cmd->draw.region = prev_region;
-		cmd->draw.uniform_idx = prev_cmd->draw.uniform_idx;
 		cmd->draw.vertex_idx = vertex_idx;
 		cmd->draw.vertex_count = vertex_count;
+		memcpy(
+			cmd->draw.uniform_blocks, prev_cmd->draw.uniform_blocks,
+			sizeof(vt_uniform) * VT_UNIFORM_BINDSLOTS_COUNT
+		);
 
 		// Skip previous draw command
 		prev_cmd->type = _VT_COMMANDTYPE_NONE;
@@ -608,10 +563,10 @@ static void _vt_queue_draw(
 	vt_primitive_type primitive
 ) {
 	// Override pipeline if the state has set one
-	vt_uniform *uniform = nullptr;
+	vt_uniform *uniforms = nullptr;
 	if (render->state.pipeline.id != SG_INVALID_ID) {
 		pip = render->state.pipeline;
-		uniform = &render->state.uniform;
+		uniforms = render->state.uniform_blocks;
 	}
 
 	if (sg_query_pipeline_state(pip) != SG_RESOURCESTATE_VALID) {
@@ -623,36 +578,9 @@ static void _vt_queue_draw(
 	if (primitive != VT_PRIMITIVETYPE_LINE_STRIP
 		&& primitive != VT_PRIMITIVETYPE_TRIANGLE_STRIP
 		&& _vt_try_merge_commands(
-			render, pip, region, uniform, vertex_idx, vertex_count
+			render, pip, region, uniforms, vertex_idx, vertex_count
 		)) {
 		return;
-	}
-
-	// Find uniform index, try to reuse previous uniforms if possible
-	u32 uniform_idx = UINT32_MAX;
-	if (uniform && uniform->ptr) {
-		vt_uniform *prev_uniform = nullptr;
-		if (render->cur_uniform > 0) {
-			prev_uniform = &render->uniforms[render->cur_uniform - 1];
-		}
-
-		if (!prev_uniform && !_vt_is_uniform_eq(uniform, prev_uniform)) {
-			// Append new uniform
-			vt_uniform *next_uniform = nullptr;
-			if (render->cur_uniform < render->uniforms_count) {
-				next_uniform = &render->uniforms[render->cur_uniform];
-				render->cur_uniform += 1;
-			}
-
-			if (!next_uniform) {
-				render->cur_vertex -= vertex_count; // Rewind vertices
-				return;
-			}
-
-			*next_uniform = render->state.uniform;
-		}
-
-		uniform_idx = render->cur_uniform - 1;
 	}
 
 	// Register new draw command
@@ -666,7 +594,13 @@ static void _vt_queue_draw(
 	cmd->draw.pipeline = pip;
 	cmd->draw.vertex_count = vertex_count;
 	cmd->draw.vertex_idx = vertex_idx;
-	cmd->draw.uniform_idx = uniform_idx;
+
+	if (uniforms) {
+		memcpy(
+			cmd->draw.uniform_blocks, uniforms,
+			sizeof(vt_uniform) * VT_UNIFORM_BINDSLOTS_COUNT
+		);
+	}
 }
 
 void vt_render_geometry(

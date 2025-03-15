@@ -27,18 +27,6 @@ typedef enum vt_primitive_type {
 	_VT_PRIMITIVETYPE_COUNT,
 } vt_primitive_type;
 
-typedef struct vt_uniform {
-	usize vs_size;
-	usize fs_size;
-	void *ptr;
-} vt_uniform;
-
-typedef struct vt_shader {
-	sg_shader shdr;
-	sg_pipeline pipeline;
-	vt_uniform uniform;
-} vt_shader;
-
 typedef struct vt_vertex {
 	vec3s position;
 	vec2s texcoord;
