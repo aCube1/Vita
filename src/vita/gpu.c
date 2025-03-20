@@ -1,36 +1,122 @@
 #include "vita/gpu.h"
-
-#include "common.h"
 #include "log.h"
 
-struct vt_gpu {
+struct _vt_gpu_resources {
+	sg_shader common_shdr;
 	sg_image white_img;
 	sg_sampler nearest_smp;
 };
 
-static struct vt_gpu _gpu = { 0 };
+static struct _vt_gpu_resources _gpu = {};
 
-vt_error vt_gpu_init_resources(void) {
-	_gpu.white_img = vt_gpu_get_white_image();
-	_gpu.nearest_smp = vt_gpu_get_nearest_sampler();
+sg_shader vt_make_gpu_shader(const vt_gpu_shader_desc *desc) {
+	assert(desc);
 
-	if (_gpu.white_img.id == SG_INVALID_ID || _gpu.nearest_smp.id == SG_INVALID_ID) {
-		return VT_ERROR_GENERIC;
+	sg_shader_desc shdrdesc = {
+		.vertex_func.source = desc->vs_src,
+		.vertex_func.entry = "main",
+		.fragment_func.source = desc->fs_src,
+		.fragment_func.entry = "main",
+		.attrs[VT_SHADER_ATTR_POS].glsl_name = "a_pos",
+		.attrs[VT_SHADER_ATTR_UV].glsl_name = "a_uv",
+		.attrs[VT_SHADER_ATTR_COLOR].glsl_name = "a_color",
+		.label = "vt_gpu_resources.common_shdr",
+	};
+
+	for (i32 i = 0; i < VT_MAX_TEXTURE_UNIFORM_SLOTS; i += 1) {
+		vt_gpu_shader_texture_desc texdesc = desc->textures[i];
+
+		shdrdesc.images[i] = (sg_shader_image) {
+			.stage = texdesc.stage,
+			.image_type = texdesc.image_type,
+			.sample_type = texdesc.image_sample,
+			.multisampled = texdesc.multisampled,
+		};
+		shdrdesc.samplers[i] = (sg_shader_sampler) {
+			.stage = texdesc.stage,
+			.sampler_type = texdesc.sampler_type,
+		};
+		shdrdesc.image_sampler_pairs[i] = (sg_shader_image_sampler_pair) {
+			.stage = texdesc.stage,
+			.image_slot = i,
+			.sampler_slot = i,
+			.glsl_name = texdesc.glsl_name,
+		};
 	}
 
-	return VT_ERROR_NONE;
+	sg_shader shdr = sg_make_shader(&shdrdesc);
+	if (sg_query_shader_state(shdr) != SG_RESOURCESTATE_VALID) {
+		sg_destroy_shader(shdr);
+		shdr.id = SG_INVALID_ID;
+	}
+
+	return shdr;
 }
 
-void vt_gpu_clean_resources(void) {
-	if (sg_query_image_state(_gpu.white_img) != SG_RESOURCESTATE_INVALID) {
-		sg_destroy_image(_gpu.white_img);
+sg_pipeline vt_make_gpu_pipeline(vt_primitive_type primitive, sg_shader shdr) {
+	sg_primitive_type primitive_type = primitive + 1;
+
+	sg_pipeline_desc pipdesc = {
+		.shader = shdr,
+		.layout = {
+			.buffers[0].stride = sizeof(vt_vertex),
+			.attrs[VT_SHADER_ATTR_POS] = {
+				.offset = offsetof(vt_vertex, position),
+				.format = SG_VERTEXFORMAT_FLOAT3,
+			},
+			.attrs[VT_SHADER_ATTR_UV] = {
+				.offset = offsetof(vt_vertex, texcoord),
+				.format = SG_VERTEXFORMAT_FLOAT2,
+			},
+			.attrs[VT_SHADER_ATTR_COLOR] = {
+				.offset = offsetof(vt_vertex, color),
+				.format = SG_VERTEXFORMAT_UBYTE4N,
+			},
+		},
+		.primitive_type = primitive_type,
+		.label = "vt_gpu.pipeline",
+	};
+
+	sg_pipeline pip = sg_make_pipeline(&pipdesc);
+	if (sg_query_pipeline_state(pip) != SG_RESOURCESTATE_VALID) {
+		sg_destroy_pipeline(pip);
+		pip.id = SG_INVALID_ID;
 	}
-	if (sg_query_sampler_state(_gpu.nearest_smp) != SG_RESOURCESTATE_INVALID) {
-		sg_destroy_sampler(_gpu.nearest_smp);
-	}
+
+	return pip;
 }
 
-sg_image vt_gpu_get_white_image(void) {
+sg_shader vt_get_gpu_common_shader(void) {
+	static const char _common_vs_source[] = {
+#embed "../assets/shaders/common.vert.glsl"
+		, '\0'
+	};
+
+	static const char _common_fs_source[] = {
+#embed "../assets/shaders/common.frag.glsl"
+		, '\0'
+	};
+
+	if (sg_query_shader_state(_gpu.common_shdr) == SG_RESOURCESTATE_VALID) {
+		return _gpu.common_shdr;
+	}
+
+	_gpu.common_shdr = vt_make_gpu_shader(&(vt_gpu_shader_desc) {
+		.vs_src = _common_vs_source,
+		.fs_src = _common_fs_source,
+		.textures[0] = {
+			.stage = SG_SHADERSTAGE_FRAGMENT,
+			.image_type = SG_IMAGETYPE_2D,
+			.sampler_type = SG_SAMPLERTYPE_FILTERING,
+			.image_sample = SG_IMAGESAMPLETYPE_FLOAT,
+			.multisampled = false,
+			.glsl_name = "u_tex0",
+		},
+	});
+	return _gpu.common_shdr;
+}
+
+sg_image vt_get_gpu_white_image(void) {
 	if (sg_query_image_state(_gpu.white_img) == SG_RESOURCESTATE_VALID) {
 		return _gpu.white_img;
 	}
@@ -41,7 +127,7 @@ sg_image vt_gpu_get_white_image(void) {
 	imgdesc.height = 2;
 	imgdesc.pixel_format = SG_PIXELFORMAT_RGBA8;
 	imgdesc.data.subimage[0][0] = SG_RANGE(pixels);
-	imgdesc.label = "vt_gpu.white_img";
+	imgdesc.label = "vt_gpu_resources.white_img";
 
 	_gpu.white_img = sg_make_image(&imgdesc);
 	if (sg_query_image_state(_gpu.white_img) != SG_RESOURCESTATE_VALID) {
@@ -53,7 +139,7 @@ sg_image vt_gpu_get_white_image(void) {
 	return _gpu.white_img;
 }
 
-sg_sampler vt_gpu_get_nearest_sampler(void) {
+sg_sampler vt_get_gpu_nearest_sampler(void) {
 	if (sg_query_sampler_state(_gpu.nearest_smp) == SG_RESOURCESTATE_VALID) {
 		return _gpu.nearest_smp;
 	}
@@ -62,7 +148,7 @@ sg_sampler vt_gpu_get_nearest_sampler(void) {
 	smpdesc.min_filter = SG_FILTER_NEAREST;
 	smpdesc.mag_filter = SG_FILTER_NEAREST;
 	smpdesc.mipmap_filter = SG_FILTER_NEAREST;
-	smpdesc.label = "vt_gpu.nearest_smp";
+	smpdesc.label = "vt_gpu_resources.nearest_smp";
 
 	_gpu.nearest_smp = sg_make_sampler(&smpdesc);
 	if (sg_query_sampler_state(_gpu.nearest_smp) != SG_RESOURCESTATE_VALID) {

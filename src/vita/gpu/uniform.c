@@ -5,23 +5,22 @@
 #include <string.h>
 
 enum {
-	_VT_DEFAULT_UNIFORM_BLOCKS = 256,
-	_VT_DEFAULT_UNIFORM_BLOCK_SIZE = 16,
+	_VT_DEFAULT_UNIFORMBLOCK_COUNT = 256,
+	_VT_DEFAULT_UNIFORMBLOCK_SIZE = 16,
 };
 
 vt_error vt_init_uniforms_pool(vt_uniforms_pool *pool, u16 size) {
 	assert(pool);
 	assert(!pool->data && !pool->blocks);
 
-	u16 pool_size = VT_DEF(size, _VT_DEFAULT_UNIFORM_BLOCKS);
-
-	pool->capacity = pool_size * _VT_DEFAULT_UNIFORM_BLOCK_SIZE;
+	u16 pool_size = VT_DEF(size, _VT_DEFAULT_UNIFORMBLOCK_COUNT);
+	pool->capacity = pool_size * _VT_DEFAULT_UNIFORMBLOCK_SIZE;
 	pool->lenght = 0;
 	pool->used_count = 0;
 
 	vt_error err = vt_init_pool(&pool->pool, pool_size);
 	if (err != VT_ERROR_NONE) {
-		LOG_ERROR("[SHADER] > Unable to initialize pool pool");
+		LOG_ERROR("[GPU] > Unable to initialize uniform pool");
 		vt_destroy_uniforms_pool(pool);
 		return VT_ERROR_GENERIC;
 	}
@@ -30,7 +29,7 @@ vt_error vt_init_uniforms_pool(vt_uniforms_pool *pool, u16 size) {
 	pool->used = calloc(pool->pool.size, sizeof(vt_uniform));
 	pool->blocks = calloc(pool->pool.size, sizeof(_vt_uniform_block));
 	if (!pool->data || !pool->used || !pool->blocks) {
-		LOG_ERROR("[SHADER] > Failed alloc pool pool resources");
+		LOG_ERROR("[GPU] > Failed alloc uniform pool resources");
 		vt_destroy_uniforms_pool(pool);
 		return VT_ERROR_OUT_OF_MEMORY;
 	}

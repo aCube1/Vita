@@ -21,12 +21,16 @@
 #endif
 
 // Utility macros
-#define VT_UNUSED(x) ((void)x)
+#define VT_UNUSED(x)   ((void)x)
+#define VT_MIN(a, b)   ((a) < (b) ? (a) : (b))
+#define VT_MAX(a, b)   ((a) > (b) ? (a) : (b))
+#define VT_DEF(a, b)   ((a) > 0 ? (a) : (b))
 
-#define VT_MIN(a, b) ((a) < (b) ? (a) : (b))
-#define VT_MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#define VT_DEF(a, b) ((a) > 0 ? (a) : (b))
+#define VT_COLOR_BLACK ((u8color) { { 0x00, 0x00, 0x00, 0xff } })
+#define VT_COLOR_WHITE ((u8color) { { 0xff, 0xff, 0xff, 0xff } })
+#define VT_COLOR_RED   ((u8color) { { 0xff, 0x00, 0x00, 0xff } })
+#define VT_COLOR_GREEN ((u8color) { { 0x00, 0xff, 0x00, 0xff } })
+#define VT_COLOR_BLUE  ((u8color) { { 0x00, 0x00, 0xff, 0xff } })
 
 typedef enum vt_error {
 	VT_ERROR_NONE,
@@ -72,5 +76,13 @@ typedef union frect {
 		f32 x2, y2;
 	};
 } frect;
+
+typedef union u8color {
+	u8 raw[4];
+
+	struct {
+		u8 r, g, b, a;
+	};
+} u8color;
 
 #endif

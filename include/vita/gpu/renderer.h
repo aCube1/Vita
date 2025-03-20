@@ -4,7 +4,6 @@
 #include "cglm/types-struct.h"
 #include "common.h"
 #include "vita/gpu.h"
-#include "vita/gpu/shader.h"
 #include "vita/gpu/uniform.h"
 
 typedef struct vt_batchstate {
@@ -16,7 +15,8 @@ typedef struct vt_batchstate {
 	u8color color;
 	sg_pipeline pipeline;
 	sg_pass render_pass;
-	vt_uniform uniform_blocks[VT_UNIFORM_BINDSLOTS_COUNT];
+	vt_uniform uniform_blocks[VT_MAX_UNIFORMBLOCK_SLOTS];
+	vt_texture_uniform textures[VT_MAX_TEXTURE_UNIFORM_SLOTS];
 
 	u32 _base_vertex;
 	u32 _base_command;
@@ -36,6 +36,7 @@ void vt_render_flush(vt_renderer *render);
 
 void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pip);
 void vt_set_render_uniform(vt_renderer *render, i32 ubslot, const sg_range *data);
+void vt_set_render_image(vt_renderer *render, i32 slot, sg_image img, sg_sampler smp);
 
 void vt_render_geometry(
 	vt_renderer *render, vt_primitive_type primitive, const vt_vertex *vertices, u32 count

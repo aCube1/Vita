@@ -24,6 +24,7 @@ typedef struct vt_appstate {
 	vt_status status;
 
 	sg_pipeline test_pip;
+	sg_image test_img;
 } vt_appstate;
 
 static void _vt_glfw_err_callback(i32 err, const char *desc) {
@@ -42,12 +43,6 @@ static vt_status _vt_init(vt_appstate *app) {
 	);
 	if (err != VT_ERROR_NONE) {
 		LOG_ERROR("[VT] > Unable to create primary window");
-		return VT_STATUS_FAILURE;
-	}
-
-	err = vt_gpu_init_resources();
-	if (err != VT_ERROR_NONE) {
-		LOG_ERROR("[GPU] > Failed to alloc default resources");
 		return VT_STATUS_FAILURE;
 	}
 
@@ -106,7 +101,7 @@ static vt_status _vt_init(vt_appstate *app) {
 			.sampler_slot = 0,
 			.glsl_name = "u_tex0",
 		},
-		.label = "vt_gpu.common_shdr",
+		.label = "test_img",
 	};
 
 	sg_shader shdr = sg_make_shader(&shdrdesc);
@@ -114,8 +109,21 @@ static vt_status _vt_init(vt_appstate *app) {
 		sg_destroy_shader(shdr);
 	}
 
-	app->test_pip = vt_make_shader_pipeline(shdr, VT_PRIMITIVETYPE_TRIANGLES);
+	app->test_pip = vt_make_gpu_pipeline(VT_PRIMITIVETYPE_TRIANGLES, shdr);
 	if (app->test_pip.id == SG_INVALID_ID) {
+		return VT_STATUS_FAILURE;
+	}
+
+	u32 pixels[4] = { 0xffffffff, 0, 0, 0xffffffff };
+	sg_image_desc imgdesc = { 0 };
+	imgdesc.width = 2;
+	imgdesc.height = 2;
+	imgdesc.pixel_format = SG_PIXELFORMAT_RGBA8;
+	imgdesc.data.subimage[0][0] = SG_RANGE(pixels);
+	imgdesc.label = "test_img";
+
+	app->test_img = sg_make_image(&imgdesc);
+	if (sg_query_image_state(app->test_img) != SG_RESOURCESTATE_VALID) {
 		return VT_STATUS_FAILURE;
 	}
 
@@ -128,8 +136,8 @@ static void _vt_quit(vt_appstate *app) {
 	}
 
 	sg_destroy_pipeline(app->test_pip);
+	sg_destroy_image(app->test_img);
 
-	vt_gpu_clean_resources();
 	vt_destroy_window(&app->window);
 	glfwTerminate();
 }
@@ -168,18 +176,19 @@ static vt_status _vt_iterate(vt_appstate *app) {
 		mat4s rot;
 		mat4s spin;
 	} data = {
-		.rot = glms_rotate_at(
-			GLMS_MAT4_IDENTITY, (vec3s) { { 64, 64, 0.0 } }, glfwGetTime(), GLMS_ZUP
-		),
-		.spin = glms_spin(GLMS_MAT4_IDENTITY, glfwGetTime(), GLMS_ZUP),
+		/* .rot = glms_rotate_at( */
+		/* 	GLMS_MAT4_IDENTITY, (vec3s) { { 64, 64, 0.0 } }, glfwGetTime(), GLMS_ZUP */
+		/* ), */
+		/* .spin = glms_spin(GLMS_MAT4_IDENTITY, glfwGetTime(), GLMS_ZUP), */
 
-		// .rot = GLMS_MAT4_IDENTITY,
-		// .spin = GLMS_MAT4_IDENTITY,
+		.rot = GLMS_MAT4_IDENTITY,
+		.spin = GLMS_MAT4_IDENTITY,
 	};
 
 	vt_render_begin(app->render, app->window.framesize);
 	vt_set_render_pipeline(app->render, app->test_pip);
-	vt_set_render_uniform(app->render, 0, &(sg_range) { .ptr = &data, sizeof(data) });
+	vt_set_render_uniform(app->render, 0, SG_RANGE_REF(data));
+	vt_set_render_image(app->render, 0, app->test_img, vt_get_gpu_nearest_sampler());
 	_vt_draw_quad(app->render, 960 / 2, 540 / 2, 128, 128);
 	vt_render_flush(app->render);
 	vt_render_end(app->render);

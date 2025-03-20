@@ -19,7 +19,6 @@ target_compile_features(
 target_sources(
 	${PROJECT_NAME} PRIVATE
 		src/vita/gpu/renderer.c
-		src/vita/gpu/shader.c
 		src/vita/gpu/uniform.c
 		src/vita/gpu.c
 		src/vita/window.c

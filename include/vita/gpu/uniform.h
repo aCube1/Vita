@@ -5,10 +5,6 @@
 #include "pool.h"
 #include "sokol/sokol_gfx.h"
 
-enum {
-	VT_UNIFORM_BINDSLOTS_COUNT = SG_MAX_UNIFORMBLOCK_BINDSLOTS,
-};
-
 typedef struct vt_uniform {
 	vt_slot_id id;
 } vt_uniform;
