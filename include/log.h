@@ -1,7 +1,7 @@
 #ifndef _VT_LOG_H
 #define _VT_LOG_H
 
-#include "common.h"
+#include "types.h"
 
 #if !defined(__FILE_NAME__)
 #	define __FILE_NAME__ "<unknown>"

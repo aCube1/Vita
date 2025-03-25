@@ -1,5 +1,8 @@
-#include "vita/gpu.h"
+#include "vita/graphics/common.h"
+
 #include "log.h"
+#include <assert.h>
+#include <string.h>
 
 struct _vt_gpu_resources {
 	sg_shader common_shdr;
@@ -9,7 +12,7 @@ struct _vt_gpu_resources {
 
 static struct _vt_gpu_resources _gpu = {};
 
-sg_shader vt_make_gpu_shader(const vt_gpu_shader_desc *desc) {
+sg_shader vt_make_gpu_shader(const vt_shader_desc *desc) {
 	assert(desc);
 
 	sg_shader_desc shdrdesc = {
@@ -23,8 +26,13 @@ sg_shader vt_make_gpu_shader(const vt_gpu_shader_desc *desc) {
 		.label = "vt_gpu_resources.common_shdr",
 	};
 
+	memcpy(
+		shdrdesc.uniform_blocks, desc->uniform_blocks,
+		sizeof(sg_shader_uniform_block) * VT_MAX_UNIFORMBLOCK_SLOTS
+	);
+
 	for (i32 i = 0; i < VT_MAX_TEXTURE_UNIFORM_SLOTS; i += 1) {
-		vt_gpu_shader_texture_desc texdesc = desc->textures[i];
+		vt_shader_texture_desc texdesc = desc->textures[i];
 
 		shdrdesc.images[i] = (sg_shader_image) {
 			.stage = texdesc.stage,
@@ -101,7 +109,7 @@ sg_shader vt_get_gpu_common_shader(void) {
 		return _gpu.common_shdr;
 	}
 
-	_gpu.common_shdr = vt_make_gpu_shader(&(vt_gpu_shader_desc) {
+	_gpu.common_shdr = vt_make_gpu_shader(&(vt_shader_desc) {
 		.vs_src = _common_vs_source,
 		.fs_src = _common_fs_source,
 		.textures[0] = {

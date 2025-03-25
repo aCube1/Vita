@@ -124,7 +124,6 @@ void vt_destroy_window(vt_window *win) {
 void vt_window_update(vt_window *win) {
 	assert(win && win->handle);
 
-	sg_commit();
 	glfwSwapBuffers(win->handle);
 	glfwPollEvents();
 }

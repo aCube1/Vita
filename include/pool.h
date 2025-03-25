@@ -1,9 +1,11 @@
 #ifndef _VT_POOL_H
 #define _VT_POOL_H
 
-#include "common.h"
+#include "types.h"
 
-#define VT_INVALID_SLOT_ID 0
+enum {
+	VT_INVALID_SLOT_ID = 0,
+};
 
 typedef u32 vt_slot_id;
 typedef u16 vt_slot_index;

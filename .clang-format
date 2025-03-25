@@ -28,7 +28,7 @@ BinPackArguments: true
 BinPackParameters: false
 BreakAfterAttributes: Always
 BreakBeforeBraces: Attach
-BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 
 IncludeBlocks: Preserve

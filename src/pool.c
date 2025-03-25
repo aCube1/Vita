@@ -1,6 +1,7 @@
 #include "pool.h"
 
 #include "log.h"
+#include "utils.h"
 #include <stdlib.h>
 
 enum {

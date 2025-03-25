@@ -1,31 +1,10 @@
 #ifndef _VT_COMMON_H
 #define _VT_COMMON_H
 
-#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(WIN32) || defined(_WIN32)
-#	define VT_TARGET_WINDOWS 1
-#elif defined(__APPLE__)
-#	include <TargetConditionals.h>
-#	if defined(TARGET_OS_MAC)
-#		define VT_TARGET_MACOS 1
-#	endif
-#elif defined(__linux__) || defined(__unix__)
-#	define VT_TARGET_LINUX 1
-#endif
-
-#if !defined(VT_TARGET_WINDOWS) && !defined(VT_TARGET_LINUX) && !defined(VT_TARGET_MACOS)
-#	error Could not detect target platform
-#endif
-
-// Utility macros
-#define VT_UNUSED(x)   ((void)x)
-#define VT_MIN(a, b)   ((a) < (b) ? (a) : (b))
-#define VT_MAX(a, b)   ((a) > (b) ? (a) : (b))
-#define VT_DEF(a, b)   ((a) > 0 ? (a) : (b))
-
+// Default colors
 #define VT_COLOR_BLACK ((u8color) { { 0x00, 0x00, 0x00, 0xff } })
 #define VT_COLOR_WHITE ((u8color) { { 0xff, 0xff, 0xff, 0xff } })
 #define VT_COLOR_RED   ((u8color) { { 0xff, 0x00, 0x00, 0xff } })

@@ -2,7 +2,7 @@
 #define _VT_VITA_WINDOW_H
 
 #include "cglm/types-struct.h"
-#include "common.h"
+#include "types.h"
 
 typedef struct GLFWwindow GLFWwindow;
 

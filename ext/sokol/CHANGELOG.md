@@ -1,5 +1,171 @@
 ## Updates
 
+### 20-Mar-2025
+
+- sokol_app.h macOS: A small fix for Ctrl-Tab key down. So far this wasn't forwarded
+  as an SAPP_EVENTTYPE_KEY_DOWN, presumably because Ctrl-Tab is the macOS
+  system hotkey for switching between application windows. The workaround
+  hooks into the Cocoa `performKeyEquivalent` callback to catch
+  Ctrl-Tab key-down events and forward them to sokol-app. Note that there are some
+  other special key combinations which cannot be intercepted the same way
+  (for instance Ctrl-F1 - which probably is a good thing because it enables
+  some critical accessibility features).
+
+  Related issue: https://github.com/floooh/sokol/issues/1227
+  ...and PR: https://github.com/floooh/sokol/pull/1228
+
+### 17-Mar-2025
+
+- sokol_fetch.h web: replace XMLHttpRequest with the more modern fetch API,
+  and fix some inconsistencies when checking the HTTP status code: all status
+  codes in the 200 range via `response.ok` now count as success.
+
+  PR: https://github.com/floooh/sokol/pull/1226
+
+### 15-Mar-2025
+
+Some general cleanup around vertex formats in sokol_gfx.h which fixes a couple
+of issues that were left-overs from the GLES2/WebGL1 removal:
+
+'Missing' integer vertex formats have been added:
+
+- `SG_VERTEXFORMAT_INT / INT2 / INT3 / INT4`
+- `SG_VERTEXFORMAT_UINT / UINT2 / UINT3 / UINT4`
+- `SG_VERTEXFORMAT_USHORT2 / USHORT4`
+
+This completes the list of vertex formats to the same state as supported
+by WebGPU with the exception of formats where the size isn't a multiple of 4
+(this simplifies the vertex component alignment rules by generally requiring
+a 4-byte alignment).
+
+The mapping of packed non-normalized vertex formats (e.g. UBYTE4) to shader
+input vertex attribute types is now consistent across all platforms and
+matches WebGPU's strict vertex attribute type mapping rules:
+
+- non-normalized unsigned integer vertex formats (UBYTE*, USHORT*, UINT*) must
+  be used as unsigned-integer types on the vertex shader side (uint, uvec*)
+- non-normalized signed integer vertex formats (BYTE*, SHORT*, INT*) must be used as
+  signed-integer types on the vertex shader side (int, ivec*)
+- ...all other types must be used as float types on the vertex shader side (float, vec*)
+
+To enforce those mapping rules in the sokol-gfx validation layer, sokol-shdc
+now writes vertex attribute 'base types' as part of the  shader reflection information
+into the code-generated `sg_shader_desc` struct.
+
+For this, a new enum `sg_shader_attr_base_type` has been added to the public API
+with the following items:
+
+    SG_SHADERATTRBASETYPE_UNDEFINED,
+    SG_SHADERATTRBASETYPE_FLOAT,
+    SG_SHADERATTRBASETYPE_SINT,
+    SG_SHADERATTRBASETYPE_UINT,
+
+It is valid to not provide a vertex attribute base type by using the default
+value `SG_SHADERATTRBASETYPE_UNDEFINED`. In this case the validation layer check
+will be skipped (this is mainly a convenience so that existing code remains
+backward compatible) - be aware though that you may run into undefined behaviour
+situations in OpenGL backends if the vertex attribute base type is not provided
+in sg_shader_desc. When using sokol-shdc you will be safe though, just recompile
+your shaders and you'll automatically get those new validation layer checks.
+
+The only actual behaviour change is in the sokol-gfx GL backend: Previously
+vertex attributes were generally declared with the GL call `glVertexAttribPointer()`.
+
+Now sokol-gfx either calls `glVertexAttribPointer()` or `glVertexAttribIPointer()`
+(note the `I`), depending on the input vertex format's 'base type'.
+
+Please also note the documentation changes in sokol_gfx.h:
+
+- the doc section `A NOTE ON PORTABLE PACKED VERTEX FORMATS` has been removed
+  because it no longer applies (all vertex formats now behave the same across
+  all backends)
+- a new doc section `ON VERTEX FORMATS` has been added
+
+Related tickets: https://github.com/floooh/sokol/issues/1213 and https://github.com/floooh/sokol/issues/286
+
+Related PR: https://github.com/floooh/sokol/pull/1222
+
+Related sokol-shdc PR: https://github.com/floooh/sokol-tools/pull/176
+
+And a minor unrelated change:
+
+- sokol_log.h no longer does redundant syslog calls on Linux and macOS,
+  instead logging only happens to stderr. This removes 'double log entries'
+  in the debugger output in some IDEs (like XCode)
+
+### 09-Mar-2025
+
+A couple of D3D11 specific regression fixes in the compute shader update that
+unfortunately slipped through testing:
+
+- Misdetected HLSL bindslot collision errors in the validation layer when multiple
+  readonly storage buffers are bound (see: https://github.com/floooh/sokol/issues/1217),
+  many thanks to @cr1sth0fer for the bug report!
+- Storage buffers bound as read/writable must now have usage immutable, and this
+  is checked in the validation layer (e.g. an storage buffer can be either updated by
+  the CPU or by the GPU, but not both). The bug manifests as storage buffers with dynamic
+  or stream usage failing to be created in the D3D11 backend (because D3D11_USAGE_DYNAMIC
+  is incompatible with D3D11_BIND_UNORDERED_ACCESS). Associated ticket: https://github.com/floooh/sokol/issues/1218
+
+Both fixes are in this PR: https://github.com/floooh/sokol/pull/1219
+
+- sokol_app.h win32: Fix mouse locking behaviour in edge cases: an assert could
+  be triggered on Win32 when the mouse is currently locked and the window focus
+  is stolen via Ctrl-Shift-Esc or Ctrl-Alt-Del (basically: opening the task manager).
+  Also, even without the assert, the mouse might remain stuck in 'mouse lock mode'
+  while the task manager is open. The behaviour has been worked around by the following
+  changes:
+
+  - a return value `false` from GetCursorPos() will be handled instead of asserted
+  - a return value `false` from SetCursorPos() will be ignored, and SetCursorPos()
+    will only be called to restore the mouse position when the previous GetCursorPos()
+    had succeeded.
+  - trying to lock the mouse while the application window isn't in the foreground
+    is now ignored
+  - the check whether a locked mouse must be unlocked now happens via polling
+    the current foreground window instead of WM_KILLFOCUS
+
+  See PR https://github.com/floooh/sokol/pull/1220 for details. Many thanks to
+  @Hisashimaru for bringing up the issue!
+
+### 08-Mar-2025
+
+Initial compute shader support has been merged into sokol_gfx.h.
+
+Please read this [blog post](https://floooh.github.io/2025/03/03/sokol-gfx-compute-update.html)
+for what that means in detail and for links to new sample code.
+
+The update is mostly backward compatible (with one minor exception,
+`sg_features.storage_buffer` has been renamed `sg_features.compute`).
+
+Related PRs:
+
+- sokol: https://github.com/floooh/sokol/pull/1200
+- sokol-tools (shdc): https://github.com/floooh/sokol-tools/pull/173
+- sokol-samples: https://github.com/floooh/sokol-samples/pull/162
+
+Most bindings got a new compute-shader sample, see the bindings PRs for
+details:
+
+- Zig: https://github.com/floooh/sokol-zig/pull/100
+- Odin: https://github.com/floooh/sokol-odin/pull/28
+- Nim: https://github.com/floooh/sokol-nim/pull/35
+- Rust: https://github.com/floooh/sokol-rust/pull/33
+- C3: https://github.com/floooh/sokol-c3/pull/1
+- D: https://github.com/kassane/sokol-d/pull/56
+- Jai: https://github.com/colinbellino/sokol-jai/pull/5
+
+### 10-Feb-2025
+
+The [sokol-c3](https://github.com/floooh/sokol-c3) bindings are now 'official'
+and properly integrated (e.g. they are updated automatically on commits to the
+sokol repo, and [sokol-shdc](https://github.com/floooh/sokol-tools) gained a
+C3 output format.
+
+Many thanks to @radekm for kicking this off and doing all the work :)
+
+Related pull request: https://github.com/floooh/sokol/pull/1148
+
 ### 09-Feb-2025
 
 - sokol_gfx.h: added the missing blend factors `SG_BLENDFACTOR_MIN` and `SG_BLENDFACTOR_MAX`
@@ -8,7 +174,7 @@
 
   Many thanks to @jdah for bringing up the issue and providing the PR and sample code!
 
-- sokol_gfx.h: removed support for PRVTC compressed pixel formats (the latest iOS SDK started
+- sokol_gfx.h: removed support for PVRTC compressed pixel formats (the latest iOS SDK started
   to issue deprecation warnings, and this also removed quite a lot of hacky special-case code from
   sokol_gfx.h). In the unlikely case that you were still using PVRTC textures, please switch
   to the ETC2 or ASTC formats instead (associated ticket: https://github.com/floooh/sokol/issues/1206)
@@ -86,7 +252,7 @@ Related PR: https://github.com/floooh/sokol/pull/1176, many thanks to
   stashed directly in a Dear ImGui ImTextureID handle instead of in a separate backing
   object (this is possible now because ImTextureID is now guaranteed to be 64 bits,
   so it can directly hold two 32-bit sokol-gfx handles). This change drastically
-  simplifies the sokol_imgui.h implementatation, but requires some breaking API
+  simplifies the sokol_imgui.h implementation, but requires some breaking API
   changes (please read the updated doc section `ON USER-PROVIDED IMAGES AND SAMPLERS`
   in sokol_imgui.h)
 - sokol_gfx.h: a couple of new functions to get granular buffer and image properties
@@ -330,7 +496,7 @@ Drive by fixes:
 ### 17-Sep-2024
 
 - The sokol_app.h Linux backend now has clipboard support. Many thanks to
-  @Dvad for the initial PR with most of the work and @qwx9 for the addtional
+  @Dvad for the initial PR with most of the work and @qwx9 for the additional
   updates. See PR https://github.com/floooh/sokol/pull/1108 for details (this
   isn't quite what ended up in sokol_app.h either, because I did a couple of code
   cleanup changes during the merge).
