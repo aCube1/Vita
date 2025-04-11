@@ -1,3 +1,4 @@
+// clang-format Language: C
 #ifndef _VT_COMMON_H
 #define _VT_COMMON_H
 

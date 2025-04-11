@@ -1,3 +1,4 @@
+// clang-format Language: C
 #ifndef _VT_POOL_H
 #define _VT_POOL_H
 

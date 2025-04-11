@@ -1,14 +1,18 @@
 // Code adapted from:
 // https://github.com/edubart/sokol_gp/blob/master/sokol_gp.h
 
-#include "vita/graphics/renderer.h"
+#include "gfx/renderer.h"
 
+#include "assert.h"
 #include "cglm/struct/cam.h"
 #include "cglm/struct/mat4.h"
 #include "log.h"
-#include "utils.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <utils.h>
+
+#define _VT_UNIFORMBLOCKS_SIZE (sizeof(vt_uniform_block) * VT_GFX_MAX_UNIFORM_SLOTS)
 
 enum {
 	_VT_DEFAULT_MAX_VERTICES = 65536,
@@ -17,9 +21,6 @@ enum {
 	_VT_MAX_MOVE_VERTICES = 128,
 	_VT_MAX_STACK_DEPTH = 64,
 	_VT_BATCH_MERGING_DEPTH = 8,
-
-	_VT_TEXTUREUNIFORMS_SIZE = sizeof(vt_texture_uniform) * VT_MAX_TEXTURE_UNIFORM_SLOTS,
-	_VT_UNIFORMBLOCKS_SIZE = sizeof(vt_uniform_block) * VT_MAX_UNIFORMBLOCK_SLOTS,
 };
 
 enum {
@@ -29,10 +30,15 @@ enum {
 	_VT_COMMANDTYPE_DRAW,
 };
 
+typedef struct _vt_texture_bind {
+	sg_image img;
+	sg_sampler smp;
+} _vt_texture_bind;
+
 typedef struct _vt_draw_command {
 	sg_pipeline pipeline;
-	vt_texture_uniform textures[VT_MAX_TEXTURE_UNIFORM_SLOTS];
-	vt_uniform_block uniforms[VT_MAX_UNIFORMBLOCK_SLOTS];
+	_vt_texture_bind textures[VT_GFX_MAX_TEXTURE_SLOTS];
+	vt_uniform_block uniforms[VT_GFX_MAX_UNIFORM_SLOTS];
 	frect region; // Screen region to be drawing to
 	u32 vertex_count;
 	u32 vertex_idx;
@@ -68,25 +74,32 @@ struct vt_renderer {
 	vt_render_state state_stack[_VT_MAX_STACK_DEPTH];
 	mat4s transform_stack[_VT_MAX_STACK_DEPTH];
 
-	sg_pipeline pipelines[_VT_PRIMITIVETYPE_COUNT];
+	sg_pipeline pipelines[_SG_PRIMITIVETYPE_NUM];
 	sg_buffer vertex_buf;
+	sg_shader common_shdr;
+	sg_image white_img;
+	sg_sampler nearest_smp;
 
 	vt_render_state state;
 };
 
-static sg_pipeline _vt_lookup_pipeline(
-	vt_renderer *render, vt_primitive_type primitive_type
-) {
+static sg_pipeline
+_vt_lookup_pipeline(vt_renderer *render, sg_primitive_type primitive_type) {
 	u32 pip_idx = primitive_type;
 	if (render->pipelines[pip_idx].id != SG_INVALID_ID) {
 		return render->pipelines[pip_idx];
 	}
 
-	sg_pipeline pip = vt_make_gpu_pipeline(primitive_type, vt_get_gpu_common_shader());
-	if (pip.id != SG_INVALID_ID) {
-		render->pipelines[pip_idx] = pip;
+	sg_shader shdr = vt_make_gfx_common_shader();
+
+	sg_pipeline_desc pipdesc = vt_init_pipeline_desc(primitive_type, shdr);
+	sg_pipeline pip = sg_make_pipeline(&pipdesc);
+	if (sg_query_pipeline_state(pip) != SG_RESOURCESTATE_VALID) {
+		sg_destroy_pipeline(pip);
+		return (sg_pipeline) { SG_INVALID_ID };
 	}
 
+	render->pipelines[pip_idx] = pip;
 	return pip;
 }
 
@@ -109,7 +122,7 @@ vt_renderer *vt_create_renderer(void) {
 	}
 
 	// Check if all primitive pipelines are valid
-	for (u32 i = 0; i < _VT_PRIMITIVETYPE_COUNT; i += 1) {
+	for (u32 i = 0; i < _SG_PRIMITIVETYPE_NUM; i += 1) {
 		sg_pipeline pip = _vt_lookup_pipeline(render, i);
 		if (pip.id == SG_INVALID_ID) {
 			LOG_FATAL("[GPU] > Renderer | Failed to make primitive pipelines");
@@ -154,7 +167,7 @@ void vt_destroy_renderer(vt_renderer *render) {
 		return;
 	}
 
-	for (u32 i = 0; i < _VT_PRIMITIVETYPE_COUNT; i += 1) {
+	for (u32 i = 0; i < _SG_PRIMITIVETYPE_NUM; i += 1) {
 		sg_pipeline pip = render->pipelines[i];
 		if (sg_query_pipeline_state(pip) != SG_RESOURCESTATE_INVALID) {
 			sg_destroy_pipeline(pip);
@@ -191,8 +204,8 @@ void vt_render_begin(vt_renderer *render, const sg_pass *pass) {
 	render->cur_state += 1;
 
 	// Setup new state
-	VT_CLEAR_MEM(render->state.uniforms, _VT_UNIFORMBLOCKS_SIZE);
-	VT_CLEAR_MEM(&render->state.textures, _VT_TEXTUREUNIFORMS_SIZE);
+	vt_clear_mem(render->state.uniforms, _VT_UNIFORMBLOCKS_SIZE);
+	vt_clear_mem(render->state.textures, sizeof(vt_texture) * VT_GFX_MAX_TEXTURE_SLOTS);
 
 	// Query render target size to fill default rendering area
 	render->state.pass = *pass;
@@ -214,11 +227,13 @@ void vt_render_begin(vt_renderer *render, const sg_pass *pass) {
 	render->state.transform = GLMS_MAT4_IDENTITY;
 	render->state.color = VT_COLOR_WHITE;
 	render->state.pipeline.id = SG_INVALID_ID;
-	render->state.textures[0].img = vt_get_gpu_white_image();
-	render->state.textures[0].smp = vt_get_gpu_nearest_sampler();
 	render->state._base_vertex = render->cur_vertex;
 	render->state._base_command = render->cur_command;
 	render->state._base_command = render->uniformbuf.lenght;
+
+	vt_make_default_texture(
+		&render->state.textures[0].img, &render->state.textures[0].smp
+	);
 }
 
 void vt_render_end(vt_renderer *render) {
@@ -267,7 +282,7 @@ void vt_render_flush(vt_renderer *render) {
 	};
 
 	u32 cur_pipeline = SG_INVALID_ID;
-	u32 cur_imgs[VT_MAX_TEXTURE_UNIFORM_SLOTS] = {};
+	u32 cur_imgs[VT_GFX_MAX_TEXTURE_SLOTS] = {};
 
 	// Begin current state pass
 	sg_begin_pass(&render->state.pass);
@@ -303,7 +318,7 @@ void vt_render_flush(vt_renderer *render) {
 			}
 
 			// Apply bindings
-			for (u32 slot = 0; slot < VT_MAX_TEXTURE_UNIFORM_SLOTS; slot += 1) {
+			for (u32 slot = 0; slot < VT_GFX_MAX_TEXTURE_SLOTS; slot += 1) {
 				sg_image img = draw->textures[slot].img;
 				sg_sampler smp = { SG_INVALID_ID };
 				if (img.id != SG_INVALID_ID) {
@@ -326,7 +341,8 @@ void vt_render_flush(vt_renderer *render) {
 
 			// Apply all uniforms
 			if (apply_uniforms) {
-				for (i32 ubslot = 0; ubslot < VT_MAX_UNIFORMBLOCK_SLOTS; ubslot += 1) {
+				for (i32 ubslot = 0; ubslot < VT_GFX_MAX_UNIFORMBLOCKS_BINDS;
+					 ubslot += 1) {
 					vt_uniform_block *block = &render->state.uniforms[ubslot];
 					if (block->size > 0) {
 						sg_range data_range = {
@@ -376,7 +392,8 @@ static _vt_render_command *_vt_get_next_command(vt_renderer *render) {
 }
 
 static inline bool _vt_do_region_overlap(frect ra, frect rb) {
-	// return !(ra.x2 <= rb.x1 || rb.x2 <= ra.x1 || ra.y2 <= rb.y1 || rb.y2 <= ra.y1);
+	// return !(ra.x2 <= rb.x1 || rb.x2 <= ra.x1 || ra.y2 <= rb.y1 || rb.y2 <=
+	// ra.y1);
 	return ra.x1 <= rb.x2 && rb.x1 <= ra.x2 && ra.y1 <= rb.y2 && rb.y2 <= ra.y1;
 }
 
@@ -403,10 +420,14 @@ static bool _vt_try_merge_commands(vt_renderer *render, const _vt_draw_command *
 			break;
 		}
 
-		// NOTE: We can compare the pointers since they point to the same memory object
-		if (cmd->draw.pipeline.id == merge->pipeline.id &&
-			!memcmp(merge->textures, cmd->draw.textures, _VT_TEXTUREUNIFORMS_SIZE) &&
-			!memcmp(merge->uniforms, cmd->draw.uniforms, _VT_UNIFORMBLOCKS_SIZE)) {
+		// NOTE: We can compare the pointers since they point to the same memory
+		// object
+		if (cmd->draw.pipeline.id == merge->pipeline.id
+			&& !memcmp(
+				merge->textures, cmd->draw.textures,
+				sizeof(vt_texture) * VT_GFX_MAX_TEXTURE_SLOTS
+			)
+			&& !memcmp(merge->uniforms, cmd->draw.uniforms, _VT_UNIFORMBLOCKS_SIZE)) {
 			prev_cmd = cmd;
 			break;
 		}
@@ -526,7 +547,10 @@ static bool _vt_try_merge_commands(vt_renderer *render, const _vt_draw_command *
 		cmd->draw.vertex_idx = merge->vertex_idx;
 		cmd->draw.vertex_count = merge->vertex_count + prev_vertex_count;
 
-		memcpy(cmd->draw.textures, prev_cmd->draw.textures, _VT_TEXTUREUNIFORMS_SIZE);
+		memcpy(
+			cmd->draw.textures, prev_cmd->draw.textures,
+			sizeof(vt_texture) * VT_GFX_MAX_TEXTURE_SLOTS
+		);
 		memcpy(cmd->draw.uniforms, prev_cmd->draw.uniforms, _VT_UNIFORMBLOCKS_SIZE);
 
 		// Skip previous draw command
@@ -594,15 +618,18 @@ void vt_render_geometry(vt_renderer *render, const vt_render_geometry_desc *desc
 		.vertex_count = desc->vertex_count,
 	};
 
-	memcpy(draw_cmd.textures, render->state.textures, _VT_TEXTUREUNIFORMS_SIZE);
+	memcpy(
+		draw_cmd.textures, render->state.textures,
+		sizeof(vt_texture) * VT_GFX_MAX_TEXTURE_SLOTS
+	);
 	if (uniforms) {
 		memcpy(draw_cmd.uniforms, uniforms, _VT_UNIFORMBLOCKS_SIZE);
 	}
 
 	// Try to merge current command with the previous ones
-	if (desc->primitive != VT_PRIMITIVETYPE_LINE_STRIP &&
-		desc->primitive != VT_PRIMITIVETYPE_TRIANGLE_STRIP &&
-		_vt_try_merge_commands(render, &draw_cmd)) {
+	if (desc->primitive != SG_PRIMITIVETYPE_LINE_STRIP
+		&& desc->primitive != SG_PRIMITIVETYPE_TRIANGLE_STRIP
+		&& _vt_try_merge_commands(render, &draw_cmd)) {
 		return;
 	}
 
@@ -662,10 +689,9 @@ void vt_render_viewport(vt_renderer *render, irect viewport) {
 	assert(render->cur_state > 0);
 
 	// Skip if nothing was changed
-	if (render->state.viewport.x == viewport.x &&
-		render->state.viewport.y == viewport.y &&
-		render->state.viewport.w == viewport.w &&
-		render->state.viewport.h == viewport.h) {
+	if (render->state.viewport.x == viewport.x && render->state.viewport.y == viewport.y
+		&& render->state.viewport.w == viewport.w
+		&& render->state.viewport.h == viewport.h) {
 		return;
 	}
 
@@ -677,7 +703,7 @@ void vt_render_viewport(vt_renderer *render, irect viewport) {
 			return;
 		}
 	}
-	VT_CLEAR_MEM(cmd, sizeof(_vt_render_command));
+	vt_clear_mem(cmd, sizeof(_vt_render_command));
 	cmd->type = _VT_COMMANDTYPE_VIEWPORT;
 	cmd->viewport = viewport;
 
@@ -698,8 +724,8 @@ void vt_render_scissor(vt_renderer *render, irect scissor) {
 	assert(render->cur_state > 0);
 
 	// Skip if nothing was changed
-	if (render->state.scissor.x == scissor.x && render->state.scissor.y == scissor.y &&
-		render->state.scissor.w == scissor.w && render->state.scissor.h == scissor.h) {
+	if (render->state.scissor.x == scissor.x && render->state.scissor.y == scissor.y
+		&& render->state.scissor.w == scissor.w && render->state.scissor.h == scissor.h) {
 		return;
 	}
 
@@ -727,7 +753,7 @@ void vt_render_scissor(vt_renderer *render, irect scissor) {
 		};
 	}
 
-	VT_CLEAR_MEM(cmd, sizeof(_vt_render_command));
+	vt_clear_mem(cmd, sizeof(_vt_render_command));
 	cmd->type = _VT_COMMANDTYPE_SCISSOR;
 	cmd->scissor = subscissor;
 
@@ -744,26 +770,30 @@ void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pipeline) {
 	memset(render->state.uniforms, 0, _VT_UNIFORMBLOCKS_SIZE);
 }
 
-void vt_set_render_texture(vt_renderer *render, i32 slot, vt_texture_uniform texture) {
+void vt_set_render_image(vt_renderer *render, i32 slot, sg_image img) {
 	assert(render);
 	assert(render->cur_state > 0);
-	assert(slot >= 0 && slot <= VT_MAX_TEXTURE_UNIFORM_SLOTS);
+	assert(slot >= 0 && slot <= VT_GFX_MAX_TEXTURE_SLOTS);
 
-	if (texture.img.id == SG_INVALID_ID || texture.smp.id == SG_INVALID_ID) {
-		return;
-	}
+	render->state.textures[slot].img = img;
+}
 
-	render->state.textures[slot] = texture;
+void vt_set_render_sample(vt_renderer *render, i32 slot, sg_sampler smp) {
+	assert(render);
+	assert(render->cur_state > 0);
+	assert(slot >= 0 && slot <= VT_GFX_MAX_TEXTURE_SLOTS);
+
+	render->state.textures[slot].smp = smp;
 }
 
 void vt_set_render_uniform(vt_renderer *render, i32 ubslot, const sg_range *data) {
 	assert(render);
 	assert(render->cur_state > 0);
-	assert(ubslot >= 0 && ubslot <= VT_MAX_UNIFORMBLOCK_SLOTS);
+	assert(ubslot >= 0 && ubslot <= VT_GFX_MAX_UNIFORMBLOCKS_BINDS);
 
 	// Disable slot if data is empty
 	if (!data || !data->ptr || data->size == 0) {
-		VT_CLEAR_MEM(&render->state.uniforms[ubslot], sizeof(vt_uniform_block));
+		vt_clear_mem(&render->state.uniforms[ubslot], sizeof(vt_uniform_block));
 		return;
 	}
 

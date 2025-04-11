@@ -1,14 +1,21 @@
-#ifndef _VT_VITA_GPU_RENDERER_H
-#define _VT_VITA_GPU_RENDERER_H
+// clang-format Language: C
+#ifndef _VT_GRAPHICS_RENDERER_H
+#define _VT_GRAPHICS_RENDERER_H
 
 #include "cglm/types-struct.h"
+#include "gfx/common.h"
+#include "sokol/sokol_gfx.h"
 #include "types.h"
-#include "vita/graphics/common.h"
 
 typedef struct vt_uniform_block {
 	usize size;
 	usize offset;
 } vt_uniform_block;
+
+typedef struct vt_texture {
+	sg_image img;
+	sg_sampler smp;
+} vt_texture;
 
 typedef struct vt_render_state {
 	sg_pass pass; // Used on sg_render_flush
@@ -19,8 +26,8 @@ typedef struct vt_render_state {
 	mat4s transform;
 	u8color color;
 	sg_pipeline pipeline;
-	vt_texture_uniform textures[VT_MAX_TEXTURE_UNIFORM_SLOTS];
-	vt_uniform_block uniforms[VT_MAX_UNIFORMBLOCK_SLOTS];
+	vt_texture textures[VT_GFX_MAX_TEXTURE_SLOTS];
+	vt_uniform_block uniforms[VT_GFX_MAX_UNIFORM_SLOTS];
 
 	u32 _base_vertex;
 	u32 _base_command;
@@ -28,7 +35,7 @@ typedef struct vt_render_state {
 } vt_render_state;
 
 typedef struct vt_render_geometry_desc {
-	vt_primitive_type primitive;
+	sg_primitive_type primitive;
 	vt_vertex *vertices;
 	u32 vertex_count;
 } vt_render_geometry_desc;
@@ -52,7 +59,8 @@ void vt_render_viewport(vt_renderer *render, irect viewport);
 void vt_render_scissor(vt_renderer *render, irect scissor);
 
 void vt_set_render_pipeline(vt_renderer *render, sg_pipeline pipeline);
-void vt_set_render_texture(vt_renderer *render, i32 slot, vt_texture_uniform texture);
+void vt_set_render_image(vt_renderer *render, i32 slot, sg_image img);
+void vt_set_render_sample(vt_renderer *render, i32 slot, sg_sampler smp);
 void vt_set_render_uniform(vt_renderer *render, i32 ubslot, const sg_range *data);
 void vt_set_render_color(vt_renderer *render, u8color color);
 

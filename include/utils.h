@@ -1,7 +1,7 @@
 #ifndef _VT_UTILS_H
 #define _VT_UTILS_H
 
-#include <assert.h>
+#include "types.h"
 
 #if defined(WIN32) || defined(_WIN32)
 #	define VT_TARGET_WINDOWS 1
@@ -19,10 +19,11 @@
 #endif
 
 // Utility macros
-#define VT_UNUSED(x)			((void)x)
-#define VT_MIN(a, b)			((a) < (b) ? (a) : (b))
-#define VT_MAX(a, b)			((a) > (b) ? (a) : (b))
-#define VT_DEF(a, b)			((a) > 0 ? (a) : (b))
-#define VT_CLEAR_MEM(ptr, size) memset((ptr), 0, (size))
+#define VT_UNUSED(x) ((void)x)
+#define VT_MIN(a, b) ((a) < (b) ? (a) : (b))
+#define VT_MAX(a, b) ((a) > (b) ? (a) : (b))
+#define VT_DEF(a, b) ((a) > 0 ? (a) : (b))
+
+void vt_clear_mem(void *ptr, usize size);
 
 #endif

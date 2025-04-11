@@ -18,12 +18,13 @@ target_compile_features(
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
-		src/vita/graphics/common.c
-		src/vita/graphics/renderer.c
-		src/vita/window.c
+		src/engine/display.c
+		src/gfx/common.c
+		src/gfx/renderer.c
 		src/log.c
 		src/main.c
 		src/pool.c
+		src/utils.c
 )
 
 target_include_directories(

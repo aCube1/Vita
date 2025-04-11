@@ -2,6 +2,8 @@
 
 #include "log.h"
 #include "utils.h"
+
+#include <assert.h>
 #include <stdlib.h>
 
 enum {
