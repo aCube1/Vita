@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 project(
 	vitae
 	VERSION 0.1.0
-	LANGUAGES C
+	LANGUAGES CXX
 )
 
 include(cmake/base.cmake)
@@ -13,18 +13,13 @@ add_executable(${PROJECT_NAME})
 
 target_compile_features(
 	${PROJECT_NAME} PRIVATE
-		c_std_23
+		cxx_std_20
 )
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
-		src/engine/display.c
-		src/gfx/common.c
-		src/gfx/renderer.c
-		src/log.c
-		src/main.c
-		src/pool.c
-		src/utils.c
+		src/log.cpp
+		src/main.cpp
 )
 
 target_include_directories(
