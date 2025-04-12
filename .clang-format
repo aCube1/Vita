@@ -3,6 +3,7 @@ BasedOnStyle: LLVM
 Language: Cpp
 Standard: c++20
 
+AccessModifierOffset: -4
 AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveMacros:
     Enabled: true
@@ -10,9 +11,11 @@ AlignConsecutiveShortCaseStatements:
     Enabled: true
 AlignEscapedNewlines: LeftWithLastLine
 AlignOperands: AlignAfterOperator
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
+BinPackParameters: false
 BreakBeforeBinaryOperators: NonAssignment
 BreakTemplateDeclarations: Yes
 ColumnLimit: 90
@@ -27,6 +30,7 @@ InsertNewlineAtEOF: true
 KeepEmptyLines:
     AtEndOfFile: true
     AtStartOfBlock: false
+PenaltyBreakAssignment: 100
 ReferenceAlignment: Left
 SpaceBeforeCpp11BracedList: true
 SpaceInEmptyBlock: true
