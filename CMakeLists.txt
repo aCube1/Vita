@@ -20,6 +20,8 @@ target_sources(
 	${PROJECT_NAME} PRIVATE
 		src/core/Engine.cpp
 		src/core/Display.cpp
+		src/math/Rect.cpp
+		src/math/Vec2.cpp
 		src/log.cpp
 		src/main.cpp
 )
@@ -27,6 +29,13 @@ target_sources(
 target_include_directories(
 	${PROJECT_NAME} PRIVATE
 		${CMAKE_SOURCE_DIR}/include
+)
+
+target_compile_definitions(
+	${PROJECT_NAME} PRIVATE
+		$<$<CXX_COMPILER_ID:GNU>:VT_COMPILER_GCC>
+		$<$<CXX_COMPILER_ID:Clang>:VT_COMPILER_CLANG>
+		#$<$<CXX_COMPILER_ID:MSVC>:VT_COMPILER_MSVC>
 )
 
 setup_libraries(${PROJECT_NAME})
