@@ -1,5 +1,5 @@
 #pragma once
-#include "Vec2.hpp"
+#include "math/Vec2.hpp"
 
 namespace vt {
 

@@ -1,7 +1,7 @@
 #ifndef _VT_MATH_RECT_HPP
 #define _VT_MATH_RECT_HPP
 
-#include "Vec2.hpp"
+#include "math/Vec2.hpp"
 
 #ifdef VT_COMPILER_CLANG
 #	pragma clang diagnostic push
