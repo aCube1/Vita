@@ -13,7 +13,7 @@
 #	pragma clang diagnostic ignored "-Wnested-anon-types"
 #endif
 
-namespace vt::math {
+namespace vt {
 
 struct Vec2 {
 	static const Vec2 One;	 // x: 1.0 | y: 1.0
@@ -102,7 +102,7 @@ inline Vec2& operator*=(Vec2& lh, T rh);
 template <typename T>
 inline Vec2& operator/=(Vec2& lh, T rh);
 
-} // namespace vt::math
+} // namespace vt
 
 #include "Vec2_impl.hpp"
 

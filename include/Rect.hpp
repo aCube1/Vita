@@ -1,7 +1,7 @@
 #ifndef _VT_MATH_RECT_HPP
 #define _VT_MATH_RECT_HPP
 
-#include "math/Vec2.hpp"
+#include "Vec2.hpp"
 
 #ifdef VT_COMPILER_CLANG
 #	pragma clang diagnostic push
@@ -9,7 +9,7 @@
 #	pragma clang diagnostic ignored "-Wnested-anon-types"
 #endif
 
-namespace vt::math {
+namespace vt {
 
 struct Rect {
 	Vec2 pos;
@@ -31,6 +31,6 @@ struct Rect {
 	return lh.pos == rh.pos && lh.size == rh.size && lh.end == rh.end;
 }
 
-} // namespace vt::math
+} // namespace vt
 
 #endif

@@ -20,8 +20,8 @@ target_sources(
 	${PROJECT_NAME} PRIVATE
 		src/core/Engine.cpp
 		src/core/Display.cpp
-		src/math/Rect.cpp
-		src/math/Vec2.cpp
+		src/Rect.cpp
+		src/Vec2.cpp
 		src/log.cpp
 		src/main.cpp
 )

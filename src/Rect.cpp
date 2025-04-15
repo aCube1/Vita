@@ -1,13 +1,13 @@
-#include "math/Rect.hpp"
+#include "Rect.hpp"
 
-using namespace vt::math;
+using namespace vt;
 
 [[nodiscard]] f32 Rect::get_area() const {
 	return size.w * size.h;
 }
 
 [[nodiscard]] Vec2 Rect::get_center() const {
-	return pos + (size / 2.0);
+	return pos + (size / 2.0f);
 }
 
 [[nodiscard]] bool Rect::has_point(const Vec2& point) const {

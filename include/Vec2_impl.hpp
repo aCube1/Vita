@@ -1,7 +1,7 @@
 #pragma once
-#include "math/Vec2.hpp"
+#include "Vec2.hpp"
 
-namespace vt::math {
+namespace vt {
 
 [[nodiscard]] inline Vec2 operator-(const Vec2& lh) {
 	return Vec2 {
@@ -134,4 +134,4 @@ inline Vec2& operator/=(Vec2& lh, T rh) {
 	return lh;
 }
 
-} // namespace vt::math
+} // namespace vt
