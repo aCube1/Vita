@@ -31,6 +31,7 @@ KeepEmptyLines:
     AtEndOfFile: true
     AtStartOfBlock: false
 PenaltyBreakAssignment: 100
+PenaltyReturnTypeOnItsOwnLine: 200
 ReferenceAlignment: Left
 SpaceBeforeCpp11BracedList: true
 SpaceInEmptyBlock: true
