@@ -8,12 +8,12 @@ const Vec2 Vec2::One { 1.0, 1.0 };
 const Vec2 Vec2::Up { 0.0, -1.0 };
 const Vec2 Vec2::Down { 0.0, 1.0 };
 const Vec2 Vec2::Left { -1.0, 0.0 };
-const Vec2 Vec2::Right { 1.0, 1.0 };
+const Vec2 Vec2::Right { 1.0, 0.0 };
 
 Vec2 Vec2::clamp(const Vec2& max, const Vec2& min) const {
 	return Vec2 {
 		std::clamp(raw[0], min.raw[0], max.raw[0]),
-		std::clamp(raw[0], min.raw[0], max.raw[0]),
+		std::clamp(raw[1], min.raw[1], max.raw[1]),
 	};
 }
 
@@ -25,22 +25,22 @@ Vec2 Vec2::clamp(f32 min, f32 max) const {
 }
 
 f32 Vec2::cross(const Vec2& other) const {
-	vec2 a = { raw[0], raw[1] };
-	vec2 b = { other.raw[0], other.raw[1] };
+	vec2& a = const_cast<vec2&>(raw);
+	vec2& b = const_cast<vec2&>(other.raw);
 
 	return glm_vec2_cross(a, b);
 }
 
 f32 Vec2::distance_to(const Vec2& other) const {
-	vec2 a = { raw[0], raw[1] };
-	vec2 b = { other.raw[0], other.raw[1] };
+	vec2& a = const_cast<vec2&>(raw);
+	vec2& b = const_cast<vec2&>(other.raw);
 
 	return glm_vec2_distance(a, b);
 }
 
 f32 Vec2::dot(const Vec2& other) const {
-	vec2 a = { raw[0], raw[1] };
-	vec2 b = { other.raw[0], other.raw[1] };
+	vec2& a = const_cast<vec2&>(raw);
+	vec2& b = const_cast<vec2&>(other.raw);
 
 	return glm_vec2_dot(a, b);
 }

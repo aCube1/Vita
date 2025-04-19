@@ -23,6 +23,7 @@ target_sources(
 		src/math/Rect.cpp
 		src/math/Transform.cpp
 		src/math/Vec2.cpp
+		src/math/Vec3.cpp
 		src/log.cpp
 		src/main.cpp
 )
