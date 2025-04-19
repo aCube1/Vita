@@ -3,135 +3,100 @@
 
 namespace vt {
 
-[[nodiscard]] inline Vec2 operator-(const Vec2& lh) {
-	return Vec2 {
-		-lh.raw[0],
-		-lh.raw[1],
-	};
+constexpr Vec2& Vec2::operator+=(const Vec2& other) {
+	raw[0] += other.raw[0];
+	raw[1] += other.raw[1];
+
+	return *this;
 }
 
-[[nodiscard]] inline Vec2 operator+(const Vec2& lh, const Vec2& rh) {
-	return Vec2 {
-		lh.raw[0] + rh.raw[0],
-		lh.raw[1] + rh.raw[1],
-	};
+constexpr Vec2& Vec2::operator-=(const Vec2& other) {
+	raw[0] -= other.raw[0];
+	raw[1] -= other.raw[1];
+
+	return *this;
 }
 
-[[nodiscard]] inline Vec2 operator-(const Vec2& lh, const Vec2& rh) {
-	return Vec2 {
-		lh.raw[0] - rh.raw[0],
-		lh.raw[1] - rh.raw[1],
-	};
+constexpr Vec2& Vec2::operator*=(const Vec2& other) {
+	raw[0] *= other.raw[0];
+	raw[1] *= other.raw[1];
+
+	return *this;
 }
 
-[[nodiscard]] inline Vec2 operator*(const Vec2& lh, const Vec2& rh) {
-	return Vec2 {
-		lh.raw[0] * rh.raw[0],
-		lh.raw[1] * rh.raw[1],
-	};
+constexpr Vec2& Vec2::operator/=(const Vec2& other) {
+	raw[0] /= other.raw[0];
+	raw[1] /= other.raw[1];
+
+	return *this;
 }
 
-[[nodiscard]] inline Vec2 operator/(const Vec2& lh, const Vec2& rh) {
-	return Vec2 {
-		lh.raw[0] / rh.raw[0],
-		lh.raw[1] / rh.raw[1],
-	};
-}
-
-[[nodiscard]] inline bool operator==(const Vec2& lh, const Vec2& rh) {
-	return lh.raw[0] == rh.raw[0] && lh.raw[1] == rh.raw[1];
-}
-
-inline Vec2& operator+=(Vec2& lh, const Vec2& rh) {
-	lh.raw[0] += rh.raw[0];
-	lh.raw[1] += rh.raw[1];
-
-	return lh;
-}
-
-inline Vec2& operator-=(Vec2& lh, const Vec2& rh) {
-	lh.raw[0] -= rh.raw[0];
-	lh.raw[1] -= rh.raw[1];
-
-	return lh;
-}
-
-inline Vec2& operator*=(Vec2& lh, const Vec2& rh) {
-	lh.raw[0] *= rh.raw[0];
-	lh.raw[1] *= rh.raw[1];
-
-	return lh;
-}
-
-inline Vec2& operator/=(Vec2& lh, const Vec2& rh) {
-	lh.raw[0] /= rh.raw[0];
-	lh.raw[1] /= rh.raw[1];
-
-	return lh;
+constexpr bool Vec2::operator==(const Vec2& other) const {
+	return raw[0] == other.raw[0] && raw[1] == other.raw[1];
 }
 
 template <typename T>
-[[nodiscard]] inline Vec2 operator+(const Vec2& lh, T rh) {
+Vec2 Vec2::operator+(T scalar) const {
 	return Vec2 {
-		lh.raw[0] + rh,
-		lh.raw[1] + rh,
+		raw[0] + static_cast<f32>(scalar),
+		raw[1] + static_cast<f32>(scalar),
 	};
 }
 
 template <typename T>
-[[nodiscard]] inline Vec2 operator-(const Vec2& lh, T rh) {
+Vec2 Vec2::operator-(T scalar) const {
 	return Vec2 {
-		lh.raw[0] - rh,
-		lh.raw[1] - rh,
+		raw[0] - static_cast<f32>(scalar),
+		raw[1] - static_cast<f32>(scalar),
 	};
 }
 
 template <typename T>
-[[nodiscard]] inline Vec2 operator*(const Vec2& lh, T rh) {
+Vec2 Vec2::operator*(T scalar) const {
 	return Vec2 {
-		lh.raw[0] * rh,
-		lh.raw[1] * rh,
+		raw[0] * static_cast<f32>(scalar),
+		raw[1] * static_cast<f32>(scalar),
 	};
 }
 
 template <typename T>
-[[nodiscard]] inline Vec2 operator/(const Vec2& lh, T rh) {
+Vec2 Vec2::operator/(T scalar) const {
 	return Vec2 {
-		lh.raw[0] / rh,
-		lh.raw[1] / rh,
+		raw[0] / static_cast<f32>(scalar),
+		raw[1] / static_cast<f32>(scalar),
 	};
 }
 
 template <typename T>
-inline Vec2& operator+=(Vec2& lh, T rh) {
-	lh.raw[0] += rh;
-	lh.raw[1] += rh;
+constexpr Vec2& Vec2::operator+=(T scalar) {
+	raw[0] += static_cast<f32>(scalar);
+	raw[1] += static_cast<f32>(scalar);
 
-	return lh;
+	return *this;
 }
 
 template <typename T>
-inline Vec2& operator-=(Vec2& lh, T rh) {
-	lh.raw[0] -= rh;
-	lh.raw[1] -= rh;
+constexpr Vec2& Vec2::operator-=(T scalar) {
+	raw[0] -= static_cast<f32>(scalar);
+	raw[1] -= static_cast<f32>(scalar);
 
-	return lh;
+	return *this;
 }
 
 template <typename T>
-inline Vec2& operator*=(Vec2& lh, T rh) {
-	lh.raw[0] *= rh;
-	lh.raw[1] *= rh;
+constexpr Vec2& Vec2::operator*=(T scalar) {
+	raw[0] *= static_cast<f32>(scalar);
+	raw[1] *= static_cast<f32>(scalar);
 
-	return lh;
+	return *this;
 }
 
 template <typename T>
-inline Vec2& operator/=(Vec2& lh, T rh) {
-	lh.raw[0] /= rh;
-	lh.raw[1] /= rh;
+constexpr Vec2& Vec2::operator/=(T scalar) {
+	raw[0] /= static_cast<f32>(scalar);
+	raw[1] /= static_cast<f32>(scalar);
 
-	return lh;
+	return *this;
 }
 
 } // namespace vt

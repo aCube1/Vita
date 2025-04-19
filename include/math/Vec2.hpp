@@ -5,7 +5,6 @@
 
 #include <cglm/types.h>
 #include <cglm/vec2.h>
-#include <cstring>
 
 #ifdef VT_COMPILER_CLANG
 #	pragma clang diagnostic push
@@ -15,7 +14,7 @@
 
 namespace vt {
 
-struct Vec2 {
+struct [[nodiscard]] Vec2 {
 	static const Vec2 One;	 // x: 1.0 | y: 1.0
 	static const Vec2 Up;	 // x: 0.0 | y:-1.0
 	static const Vec2 Down;	 // x: 0.0 | y: 1.0
@@ -50,57 +49,57 @@ struct Vec2 {
 		raw[1] = v[1];
 	}
 
-	[[nodiscard]] Vec2 clamp(const Vec2& max, const Vec2& min) const;
-	[[nodiscard]] Vec2 clamp(f32 min, f32 max) const;
-	[[nodiscard]] f32 cross(const Vec2& other) const;
-	[[nodiscard]] f32 distance_to(const Vec2& other) const;
-	[[nodiscard]] f32 dot(const Vec2& other) const;
-	[[nodiscard]] f32 lenght() const;
-	[[nodiscard]] Vec2 lerp(const Vec2& to, f32 weight) const;
-	[[nodiscard]] Vec2 max(const Vec2& other) const;
-	[[nodiscard]] Vec2 max(f32 max) const;
-	[[nodiscard]] Vec2 min(const Vec2& other) const;
-	[[nodiscard]] Vec2 min(f32 min) const;
-	[[nodiscard]] Vec2 normalized() const;
+	Vec2 clamp(const Vec2& max, const Vec2& min) const;
+	Vec2 clamp(f32 min, f32 max) const;
+	f32 cross(const Vec2& other) const;
+	f32 distance_to(const Vec2& other) const;
+	f32 dot(const Vec2& other) const;
+	f32 lenght() const;
+	Vec2 lerp(const Vec2& to, f32 weight) const;
+	Vec2 max(const Vec2& other) const;
+	Vec2 max(f32 max) const;
+	Vec2 min(const Vec2& other) const;
+	Vec2 min(f32 min) const;
+	Vec2 normalized() const;
+
+	Vec2 operator-() const;
+	Vec2 operator+(const Vec2& other) const;
+	Vec2 operator-(const Vec2& other) const;
+	Vec2 operator*(const Vec2& other) const;
+	Vec2 operator/(const Vec2& other) const;
+
+	constexpr Vec2& operator+=(const Vec2& other);
+	constexpr Vec2& operator-=(const Vec2& other);
+	constexpr Vec2& operator*=(const Vec2& other);
+	constexpr Vec2& operator/=(const Vec2& other);
+	constexpr bool operator==(const Vec2& other) const;
+
+	template <typename T>
+	Vec2 operator+(T scalar) const;
+
+	template <typename T>
+	Vec2 operator-(T scalar) const;
+
+	template <typename T>
+	Vec2 operator*(T scalar) const;
+
+	template <typename T>
+	Vec2 operator/(T scalar) const;
+
+	template <typename T>
+	constexpr Vec2& operator+=(T scalar);
+
+	template <typename T>
+	constexpr Vec2& operator-=(T scalar);
+
+	template <typename T>
+	constexpr Vec2& operator*=(T scalar);
+
+	template <typename T>
+	constexpr Vec2& operator/=(T scalar);
 };
 
 using Point = Vec2;
-
-[[nodiscard]] inline Vec2 operator-(const Vec2& lh);
-[[nodiscard]] inline Vec2 operator+(const Vec2& lh, const Vec2& rh);
-[[nodiscard]] inline Vec2 operator-(const Vec2& lh, const Vec2& rh);
-[[nodiscard]] inline Vec2 operator*(const Vec2& lh, const Vec2& rh);
-[[nodiscard]] inline Vec2 operator/(const Vec2& lh, const Vec2& rh);
-[[nodiscard]] inline bool operator==(const Vec2& lh, const Vec2& rh);
-
-inline Vec2& operator+=(Vec2& lh, const Vec2& rh);
-inline Vec2& operator-=(Vec2& lh, const Vec2& rh);
-inline Vec2& operator*=(Vec2& lh, const Vec2& rh);
-inline Vec2& operator/=(Vec2& lh, const Vec2& rh);
-
-template <typename T>
-[[nodiscard]] inline Vec2 operator+(const Vec2& lh, T rh);
-
-template <typename T>
-[[nodiscard]] inline Vec2 operator-(const Vec2& lh, T rh);
-
-template <typename T>
-[[nodiscard]] inline Vec2 operator*(const Vec2& lh, T rh);
-
-template <typename T>
-[[nodiscard]] inline Vec2 operator/(const Vec2& lh, T rh);
-
-template <typename T>
-inline Vec2& operator+=(Vec2& lh, T rh);
-
-template <typename T>
-inline Vec2& operator-=(Vec2& lh, T rh);
-
-template <typename T>
-inline Vec2& operator*=(Vec2& lh, T rh);
-
-template <typename T>
-inline Vec2& operator/=(Vec2& lh, T rh);
 
 } // namespace vt
 

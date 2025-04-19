@@ -11,7 +11,7 @@
 
 namespace vt {
 
-struct Rect {
+struct [[nodiscard]] Rect {
 	Vec2 pos;
 	Vec2 size;
 	Vec2 end; // Should always be: pos + size
@@ -21,15 +21,15 @@ struct Rect {
 	Rect(const Vec2& pos_, const Vec2& size_)
 		: pos { pos_ }, size { size_ }, end { pos_ + size_ } { }
 
-	[[nodiscard]] f32 get_area() const;
-	[[nodiscard]] Vec2 get_center() const;
-	[[nodiscard]] bool has_point(const Vec2& point) const;
-	[[nodiscard]] bool intersects(const Rect& rect, bool edges = false) const;
-};
+	f32 get_area() const;
+	Vec2 get_center() const;
+	bool has_point(const Vec2& point) const;
+	bool intersects(const Rect& rect, bool edges = false) const;
 
-[[nodiscard]] inline bool operator==(const Rect& lh, const Rect& rh) {
-	return lh.pos == rh.pos && lh.size == rh.size && lh.end == rh.end;
-}
+	constexpr bool operator==(const Rect& other) const {
+		return pos == other.pos && size == other.size && end == other.end;
+	}
+};
 
 } // namespace vt
 
