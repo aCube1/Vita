@@ -1,5 +1,94 @@
 ## Updates
 
+### 05-Apr-2025
+
+- Compute shaders are now supported on platforms that support GLES3.1
+(e.g. Android and desktop Linux, but not WebGL2 or iOS):
+
+    - sokol_app.h:
+        - `sapp_desc.gl_major/minor_version` is now taken into account for GLES context
+          creation on platforms that support more recent GLES3 contexts than GLES3.0
+          (Android and desktop Linux)
+        - the functions `sapp_gl_get_major_version()` and `sapp_gl_get_minor_version()`
+          now return the requested GL context version also in 'GLES3 mode'
+        - a new function `sapp_gl_is_gles()` has been added which returns true in 'GLES3 mode'
+        - on Android and desktop-Linux in GLES3 mode, a GLES3.1 context will now be
+          created by default
+    - sokol_gfx.h:
+        - the SOKOL_GLES3 code path now dynamically queries the GLES3 context version
+          to check for storage-buffer and compute-shader support (e.g. >= GLES3.1)
+
+    Note that to get compute shader support on GLES3.1 capable platforms you'll also
+    need to pass in matching GLSL shaders, e.g. with sokol-shdc, use the `glsl310es`
+    output shader language instead of `glsl300es`.
+
+    For details see PR https://github.com/floooh/sokol/pull/1241
+
+- sokol_audio.h Android: the OpenSLES backend has been removed (the Android NDK has
+started to throw deprecation errors when switching to a more recent target platform version,
+so not much point in supporting SLES anymore).
+
+    PR: https://github.com/floooh/sokol/pull/1243
+
+### 04-Apr-2025
+
+- sokol_imgui.h: a small compatibility hack for the 'traditional' [cimgui.h](https://github.com/cimgui/cimgui).
+  It's a bit unfortunate that the cimgui.h bindings are starting to diverge from
+  the Dear Bindings C API for basic functionality, but as long as it's only a handful
+  differences it's ok to handle both in sokol_imgui.h. If the difference become
+  bigger it might become too much hassle to support both C bindings flavours though.
+
+  This is not an issue when using the Dear ImGui C++ API of course.
+
+  Note that it is recommended to use the code-generated C bindings from here:
+
+  https://github.com/floooh/dcimgui
+
+  Many thanks to @n67094 for the initial PR: https://github.com/floooh/sokol/pull/1240
+
+
+### 31-Mar-2025
+
+- sokol_app.h linux: fix a drag-n-drop related memory leak
+  (see PR https://github.com/floooh/sokol/pull/1238).
+  Many thanks to @bullno1 for catching and fixing that issue!
+- sokol_app.h linux: two new functions to obtain the X11 window and
+  display handles: `sapp_x11_get_window()` and `sapp_x11_get_display()`.
+  Again, many thanks to @bullno1 for the PR (https://github.com/floooh/sokol/pull/1237)!
+
+### 29-Mar-2025
+
+- sokol_gfx.h: A new validation check now protects from calling `sg_apply_bindings`
+  with an empty `sg_bindings` struct. This prevents a misleading validation error
+  further down the line (see https://github.com/floooh/sokol/issues/1235).
+  It is debatable whether calling `sg_apply_bindings()` without any bindings
+  should be valid for draw calls that do not require bindings, but at least
+  for now I decided to turn this case into a validation layer error since it's
+  almost certainly an oversight.
+
+  PR: https://github.com/floooh/sokol/pull/1236
+
+### 28-Mar-2025
+
+- sokol_spine.h has been updated for the Spine C runtime version 4.2
+- all headers: fixed warning when building with Clang on Windows
+  (mostly -Wsign-conversion issues in the Windows-specific code paths)
+
+### 26-Mar-2025
+
+- sokol_app.h win32: Mouse lock behaviour is now more robust in edge cases
+  (like stealing the window focus by opening the Windows task manager):
+  Calling sapp_lock_mouse() will now only set a flag with the new
+  intended mouse lock state instead of changing the mouse-lock state immediately.
+  Then once per frame the sokol_app.h win32 run-loop will check if the intended
+  state differs from the current state and will change the mouse lock state
+  accordingly.
+
+  Also note the updated `MOUSE LOCK` documentation section in sokol_app.h.
+
+  Related issue: https://github.com/floooh/sokol/issues/1221
+  Implemented in PR: https://github.com/floooh/sokol/pull/1230
+
 ### 20-Mar-2025
 
 - sokol_app.h macOS: A small fix for Ctrl-Tab key down. So far this wasn't forwarded

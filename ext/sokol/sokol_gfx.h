@@ -452,7 +452,7 @@
         sg_apply_scissor_rect[f]
         sg_draw
 
-    The folling function may be called inside a render- or compute-pass, but
+    The following function may be called inside a render- or compute-pass, but
     not outside a pass:
 
         sg_apply_pipeline
@@ -711,8 +711,9 @@
 
         - macOS and iOS with Metal
         - Windows with D3D11 and OpenGL
-        - Linux with OpenGL
-        - web with WebGPU
+        - Linux with OpenGL or GLES3.1+
+        - Web with WebGPU
+        - Android with GLES3.1+
 
     ...this means compute shaders can't be used on the following platform/backend
     combos (the same restrictions apply to using storage buffers without compute
@@ -720,8 +721,7 @@
 
         - macOS with GL
         - iOS with GLES3
-        - Android
-        - web with WebGL2
+        - Web with WebGL2
 
     A compute pass is started with:
 
@@ -818,7 +818,7 @@
         - for the GLES3 backend, source code must be provided in '#version 300 es' syntax
         - for the D3D11 backend, shaders can be provided as source or binary
           blobs, the source code should be in HLSL4.0 (for compatibility with old
-          low-end GPUs) or preferrably in HLSL5.0 syntax, note that when
+          low-end GPUs) or preferably in HLSL5.0 syntax, note that when
           shader source code is provided for the D3D11 backend, sokol-gfx will
           dynamically load 'd3dcompiler_47.dll'
         - for the Metal backends, shaders can be provided as source or binary blobs, the
@@ -883,7 +883,7 @@
         - a boolean 'readonly' flag, this is used for validation and hazard
           tracking in some 3D backends. Note that in render passes, only
           readonly storage buffer bindings are allowed. In compute passes, any
-          read/write storage buffer binding is assumbed to be written to by the
+          read/write storage buffer binding is assumed to be written to by the
           compute shader.
         - a backend-specific bind slot:
             - D3D11/HLSL:
@@ -978,7 +978,7 @@
         - for Metal:    https://github.com/floooh/sokol-samples/tree/master/metal
         - for OpenGL:   https://github.com/floooh/sokol-samples/tree/master/glfw
         - for GLES3:    https://github.com/floooh/sokol-samples/tree/master/html5
-        - for WebGPI:   https://github.com/floooh/sokol-samples/tree/master/wgpu
+        - for WebGPU:   https://github.com/floooh/sokol-samples/tree/master/wgpu
 
 
     ON SG_IMAGESAMPLETYPE_UNFILTERABLE_FLOAT AND SG_SAMPLERTYPE_NONFILTERING
@@ -1185,8 +1185,7 @@
     Storage buffers are *NOT* supported on the following platform/backend combos:
 
     - macOS+GL (because storage buffers require GL 4.3, while macOS only goes up to GL 4.1)
-    - all GLES3 platforms (WebGL2, iOS, Android - with the option that support on
-      Android may be added at a later point)
+    - platforms which only support a GLES3.0 context (WebGL2 and iOS)
 
     To use storage buffers, the following steps are required:
 
@@ -4213,6 +4212,7 @@ typedef struct sg_frame_stats {
     _SG_LOGITEM_XMACRO(VALIDATE_APIP_DEPTH_FORMAT, "sg_apply_pipeline: pipeline depth pixel_format doesn't match pass depth attachment pixel format") \
     _SG_LOGITEM_XMACRO(VALIDATE_APIP_SAMPLE_COUNT, "sg_apply_pipeline: pipeline MSAA sample count doesn't match render pass attachment sample count") \
     _SG_LOGITEM_XMACRO(VALIDATE_ABND_PASS_EXPECTED, "sg_apply_bindings: must be called in a pass") \
+    _SG_LOGITEM_XMACRO(VALIDATE_ABND_EMPTY_BINDINGS, "sg_apply_bindings: the provided sg_bindings struct is empty") \
     _SG_LOGITEM_XMACRO(VALIDATE_ABND_PIPELINE, "sg_apply_bindings: must be called after sg_apply_pipeline") \
     _SG_LOGITEM_XMACRO(VALIDATE_ABND_PIPELINE_EXISTS, "sg_apply_bindings: currently applied pipeline object no longer alive") \
     _SG_LOGITEM_XMACRO(VALIDATE_ABND_PIPELINE_VALID, "sg_apply_bindings: currently applied pipeline object not in valid state") \
@@ -4978,17 +4978,20 @@ inline int sg_append_buffer(sg_buffer buf_id, const sg_range& data) { return sg_
                 #include <OpenGLES/ES3/gl.h>
                 #include <OpenGLES/ES3/glext.h>
             #endif
-        #elif defined(__EMSCRIPTEN__) || defined(__ANDROID__)
+        #elif defined(__EMSCRIPTEN__)
             #if defined(SOKOL_GLES3)
                 #include <GLES3/gl3.h>
             #endif
+        #elif defined(__ANDROID__)
+            #define _SOKOL_GL_HAS_COMPUTE (1)
+            #include <GLES3/gl31.h>
         #elif defined(__linux__) || defined(__unix__)
+            #define _SOKOL_GL_HAS_COMPUTE (1)
             #if defined(SOKOL_GLCORE)
                 #define GL_GLEXT_PROTOTYPES
                 #include <GL/gl.h>
-                #define _SOKOL_GL_HAS_COMPUTE (1)
             #else
-                #include <GLES3/gl3.h>
+                #include <GLES3/gl31.h>
                 #include <GLES3/gl3ext.h>
             #endif
         #endif
@@ -6524,7 +6527,7 @@ static void _sg_log(sg_log_item log_item, uint32_t log_level, const char* msg, u
                 msg = _sg_log_messages[log_item];
             }
         #endif
-        _sg.desc.logger.func("sg", log_level, log_item, msg, line_nr, filename, _sg.desc.logger.user_data);
+        _sg.desc.logger.func("sg", log_level, (uint32_t)log_item, msg, line_nr, filename, _sg.desc.logger.user_data);
     } else {
         // for log level PANIC it would be 'undefined behaviour' to continue
         if (log_level == 0) {
@@ -8345,11 +8348,16 @@ _SOKOL_PRIVATE void _sg_gl_init_caps_glcore(void) {
 _SOKOL_PRIVATE void _sg_gl_init_caps_gles3(void) {
     _sg.backend = SG_BACKEND_GLES3;
 
+    GLint major_version = 0;
+    GLint minor_version = 0;
+    glGetIntegerv(GL_MAJOR_VERSION, &major_version);
+    glGetIntegerv(GL_MINOR_VERSION, &minor_version);
+    const int version = major_version * 100 + minor_version * 10;
     _sg.features.origin_top_left = false;
     _sg.features.image_clamp_to_border = false;
     _sg.features.mrt_independent_blend_state = false;
     _sg.features.mrt_independent_write_mask = false;
-    _sg.features.compute = false;
+    _sg.features.compute = version >= 310;
     _sg.features.msaa_image_bindings = false;
 
     bool has_s3tc = false;  // BC1..BC3
@@ -9997,6 +10005,9 @@ _SOKOL_PRIVATE void _sg_gl_apply_pipeline(_sg_pipeline_t* pip) {
 
 #if defined _SOKOL_GL_HAS_COMPUTE
 _SOKOL_PRIVATE void _sg_gl_handle_memory_barriers(const _sg_shader_t* shd, const _sg_bindings_t* bnd) {
+    if (!_sg.features.compute) {
+        return;
+    }
     // NOTE: currently only storage buffers can be GPU-written, and storage
     // buffers cannot be bound as vertex- or index-buffers.
     bool needs_barrier = false;
@@ -10220,6 +10231,9 @@ _SOKOL_PRIVATE void _sg_gl_draw(int base_element, int num_elements, int num_inst
 
 _SOKOL_PRIVATE void _sg_gl_dispatch(int num_groups_x, int num_groups_y, int num_groups_z) {
     #if defined(_SOKOL_GL_HAS_COMPUTE)
+    if (!_sg.features.compute) {
+        return;
+    }
     glDispatchCompute((GLuint)num_groups_x, (GLuint)num_groups_y, (GLuint)num_groups_z);
     #else
     (void)num_groups_x; (void)num_groups_y; (void)num_groups_z;
@@ -11256,7 +11270,7 @@ _SOKOL_PRIVATE sg_resource_state _sg_d3d11_create_buffer(_sg_buffer_t* buf, cons
             if (desc->data.ptr) {
                 init_data.pSysMem = desc->data.ptr;
             } else {
-                init_data.pSysMem = (const void*)_sg_malloc_clear(buf->cmn.size);
+                init_data.pSysMem = (const void*)_sg_malloc_clear((size_t)buf->cmn.size);
             }
             init_data_ptr = &init_data;
         }
@@ -11273,13 +11287,13 @@ _SOKOL_PRIVATE sg_resource_state _sg_d3d11_create_buffer(_sg_buffer_t* buf, cons
         // for read-only access, and an unordered-access-view for
         // read-write access
         if (buf->cmn.type == SG_BUFFERTYPE_STORAGEBUFFER) {
-            SOKOL_ASSERT(_sg_multiple_u64(buf->cmn.size, 4));
+            SOKOL_ASSERT(_sg_multiple_u64((uint64_t)buf->cmn.size, 4));
             D3D11_SHADER_RESOURCE_VIEW_DESC d3d11_srv_desc;
             _sg_clear(&d3d11_srv_desc, sizeof(d3d11_srv_desc));
             d3d11_srv_desc.Format = DXGI_FORMAT_R32_TYPELESS;
             d3d11_srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
             d3d11_srv_desc.BufferEx.FirstElement = 0;
-            d3d11_srv_desc.BufferEx.NumElements = buf->cmn.size / 4;
+            d3d11_srv_desc.BufferEx.NumElements = ((UINT)buf->cmn.size) / 4;
             d3d11_srv_desc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
             hr = _sg_d3d11_CreateShaderResourceView(_sg.d3d11.dev, (ID3D11Resource*)buf->d3d11.buf, &d3d11_srv_desc, &buf->d3d11.srv);
             if (!(SUCCEEDED(hr) && buf->d3d11.srv)) {
@@ -11292,7 +11306,7 @@ _SOKOL_PRIVATE sg_resource_state _sg_d3d11_create_buffer(_sg_buffer_t* buf, cons
                 d3d11_uav_desc.Format = DXGI_FORMAT_R32_TYPELESS;
                 d3d11_uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                 d3d11_uav_desc.Buffer.FirstElement = 0;
-                d3d11_uav_desc.Buffer.NumElements = buf->cmn.size / 4;
+                d3d11_uav_desc.Buffer.NumElements = ((UINT)buf->cmn.size) / 4;
                 d3d11_uav_desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
                 hr = _sg_d3d11_CreateUnorderedAccessView(_sg.d3d11.dev, (ID3D11Resource*)buf->d3d11.buf, &d3d11_uav_desc, &buf->d3d11.uav);
                 if (!(SUCCEEDED(hr) && buf->d3d11.uav)) {
@@ -11969,7 +11983,7 @@ _SOKOL_PRIVATE sg_resource_state _sg_d3d11_create_pipeline(_sg_pipeline_t* pip, 
     bs_desc.IndependentBlendEnable = TRUE;
     {
         size_t i = 0;
-        for (i = 0; i < desc->color_count; i++) {
+        for (i = 0; i < (size_t)desc->color_count; i++) {
             const sg_blend_state* src = &desc->colors[i].blend;
             D3D11_RENDER_TARGET_BLEND_DESC* dst = &bs_desc.RenderTarget[i];
             dst->BlendEnable = src->enabled;
@@ -12025,7 +12039,7 @@ _SOKOL_PRIVATE sg_resource_state _sg_d3d11_create_attachments(_sg_attachments_t*
     SOKOL_ASSERT(_sg.d3d11.dev);
 
     // copy image pointers
-    for (size_t i = 0; i < atts->cmn.num_colors; i++) {
+    for (size_t i = 0; i < (size_t)atts->cmn.num_colors; i++) {
         const sg_attachment_desc* color_desc = &desc->colors[i];
         _SOKOL_UNUSED(color_desc);
         SOKOL_ASSERT(color_desc->image.id != SG_INVALID_ID);
@@ -12051,7 +12065,7 @@ _SOKOL_PRIVATE sg_resource_state _sg_d3d11_create_attachments(_sg_attachments_t*
     }
 
     // create render-target views
-    for (size_t i = 0; i < atts->cmn.num_colors; i++) {
+    for (size_t i = 0; i < (size_t)atts->cmn.num_colors; i++) {
         const _sg_attachment_common_t* cmn_color_att = &atts->cmn.colors[i];
         const _sg_image_t* color_img = color_images[i];
         SOKOL_ASSERT(0 == atts->d3d11.colors[i].view.rtv);
@@ -12210,7 +12224,7 @@ _SOKOL_PRIVATE void _sg_d3d11_begin_pass(const sg_pass* pass) {
     _sg_d3d11_RSSetScissorRects(_sg.d3d11.ctx, 1, &rect);
 
     // perform clear action
-    for (size_t i = 0; i < num_rtvs; i++) {
+    for (size_t i = 0; i < (size_t)num_rtvs; i++) {
         if (action->colors[i].load_action == SG_LOADACTION_CLEAR) {
             _sg_d3d11_ClearRenderTargetView(_sg.d3d11.ctx, rtvs[i], (float*)&action->colors[i].clear_value);
             _sg_stats_add(d3d11.pass.num_clear_render_target_view, 1);
@@ -12242,7 +12256,7 @@ _SOKOL_PRIVATE void _sg_d3d11_end_pass(void) {
         if (_sg.cur_pass.atts_id.id != SG_INVALID_ID) {
             // ...for offscreen pass...
             SOKOL_ASSERT(_sg.cur_pass.atts && _sg.cur_pass.atts->slot.id == _sg.cur_pass.atts_id.id);
-            for (size_t i = 0; i < _sg.cur_pass.atts->cmn.num_colors; i++) {
+            for (size_t i = 0; i < (size_t)_sg.cur_pass.atts->cmn.num_colors; i++) {
                 const _sg_image_t* resolve_img = _sg.cur_pass.atts->d3d11.resolves[i].image;
                 if (resolve_img) {
                     const _sg_image_t* color_img = _sg.cur_pass.atts->d3d11.colors[i].image;
@@ -18619,6 +18633,22 @@ _SOKOL_PRIVATE bool _sg_validate_apply_bindings(const sg_bindings* bindings) {
 
         // must be called in a pass
         _SG_VALIDATE(_sg.cur_pass.in_pass, VALIDATE_ABND_PASS_EXPECTED);
+
+        // bindings must not be empty
+        bool has_any_bindings = bindings->index_buffer.id != SG_INVALID_ID;
+        if (!has_any_bindings) for (size_t i = 0; i < SG_MAX_VERTEXBUFFER_BINDSLOTS; i++) {
+            has_any_bindings |= bindings->vertex_buffers[i].id != SG_INVALID_ID;
+        }
+        if (!has_any_bindings) for (size_t i = 0; i < SG_MAX_IMAGE_BINDSLOTS; i++) {
+            has_any_bindings |= bindings->images[i].id != SG_INVALID_ID;
+        }
+        if (!has_any_bindings) for (size_t i = 0; i < SG_MAX_SAMPLER_BINDSLOTS; i++) {
+            has_any_bindings |= bindings->samplers[i].id != SG_INVALID_ID;
+        }
+        if (!has_any_bindings) for (size_t i = 0; i < SG_MAX_STORAGEBUFFER_BINDSLOTS; i++) {
+            has_any_bindings |= bindings->storage_buffers[i].id != SG_INVALID_ID;
+        }
+        _SG_VALIDATE(has_any_bindings, VALIDATE_ABND_EMPTY_BINDINGS);
 
         // a pipeline object must have been applied
         _SG_VALIDATE(_sg.cur_pipeline.id != SG_INVALID_ID, VALIDATE_ABND_PIPELINE);
