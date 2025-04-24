@@ -19,9 +19,11 @@ void log::send_message(
 	VT_UNUSED(file);
 	VT_UNUSED(line);
 
-	// Color table: https://en.wikipedia.org/wiki/ANSI_escape_code
-	static const char *_log_color[] = { "\x1b[32m", "\x1b[36m", "\x1b[33m", "\x1b[31m" };
-	static const char *_log_name[] = { "DEBUG", "INFO", "WARN", "ERROR" };
+	// Color table: https://en.wikipedia.org/wiki/ansi_escape_code
+	static const char *_log_color[] = {
+		"\x1b[32m", "\x1b[36m", "\x1b[33m", "\x1b[31m", "\x1b[91m",
+	};
+	static const char *_log_name[] = { "DEBUG", "INFO", "WARN", "ERROR", "FATAL" };
 
 	using system_clock = std::chrono::system_clock;
 	auto now = system_clock::to_time_t(system_clock::now());
@@ -73,6 +75,6 @@ void log::slog_callback(
 	log::send_message(loglevel, file, line, fmt, std::make_format_args());
 
 	if (loglevel == log::Level::Fatal) {
-		abort();
+		std::abort();
 	}
 }
