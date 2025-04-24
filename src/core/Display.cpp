@@ -1,17 +1,14 @@
 #include "core/Display.hpp"
 
-#define GLFW_INCLUDE_NONE
-#define GLAD_GL_IMPLEMENTATION
-#define SOKOL_IMPL
-#define SOKOL_GLCORE
-#define SOKOL_EXTERNAL_GL_LOADER
-
+#include "gfx/common.hpp"
 #include "log.hpp"
 
-#include <GLFW/glfw3.h>
-#include <glad/gl.h>
-#include <sokol/sokol_gfx.h>
 #include <string>
+
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 using namespace vt::core;
 
@@ -40,6 +37,9 @@ bool Display::create(i32 width, i32 height, std::string_view title) {
 
 	m_context.version_major = 4;
 	m_context.version_minor = 1;
+	m_context.pixel_format = SG_PIXELFORMAT_RGBA8;
+	m_context.depth_format = SG_PIXELFORMAT_DEPTH;
+	m_context.samples = 1;
 
 	glfwDefaultWindowHints();
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -64,6 +64,11 @@ bool Display::create(i32 width, i32 height, std::string_view title) {
 	_gl_init();
 
 	sg_desc desc;
+	desc.environment.defaults = {
+		.color_format = m_context.pixel_format,
+		.depth_format = m_context.depth_format,
+		.sample_count = m_context.samples,
+	};
 #if !defined(NDEBUG)
 	desc.logger.func = vt::log::slog_callback;
 #endif
@@ -74,15 +79,41 @@ bool Display::create(i32 width, i32 height, std::string_view title) {
 		return false;
 	}
 
+	_init();
 	return true;
 }
 
 void Display::close() {
+	_deinit();
 	sg_shutdown();
 
 	if (m_window) {
 		glfwDestroyWindow(m_window);
 	}
+}
+
+void Display::begin() {
+	i32 framebuffer_width;
+	i32 framebuffer_height;
+
+	glfwGetFramebufferSize(m_window, &framebuffer_width, &framebuffer_height);
+	m_render_pass.swapchain.width = framebuffer_width;
+	m_render_pass.swapchain.height = framebuffer_height;
+	m_render_pass.swapchain.sample_count = m_context.samples;
+	m_render_pass.swapchain.color_format = m_context.pixel_format;
+	m_render_pass.swapchain.depth_format = m_context.depth_format;
+	m_render_pass.action.colors[0] = {
+		.load_action = SG_LOADACTION_CLEAR,
+		.store_action = SG_STOREACTION_STORE,
+		.clear_value = { 0.2, 0.2, 0.2, 1.0 },
+	};
+
+	_begin_frame(m_render_pass);
+}
+
+void Display::end() {
+	flush();
+	_end_frame();
 }
 
 void Display::present() {

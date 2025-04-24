@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 	VT_UNUSED(argv);
 
 	auto engine = vt::core::Engine();
-	// engine.run();
+	engine.run();
 
 	return EXIT_SUCCESS;
 }

@@ -31,8 +31,42 @@ Engine::~Engine() {
 	glfwTerminate();
 }
 
+static void _draw_rect(Display& display, f32 x, f32 y, f32 w, f32 h) {
+	vt::Vec3 quad[4] = {
+		vt::Vec3(x, y, 0.0),		 // Top Left
+		vt::Vec3(x + w, y, 0.0),	 // Top Right
+		vt::Vec3(x + w, y + h, 0.0), // Bottom Right
+		vt::Vec3(x, y + h, 0.0),	 // Bottom Left
+	};
+
+	vt::Vec2 quad_uv[4] = {
+		vt::Vec2(0.0, 0.0), // Top Left
+		vt::Vec2(1.0, 0.0), // Top Right
+		vt::Vec2(1.0, 1.0), // Bottom Right
+		vt::Vec2(0.0, 1.0), // Bottom Left
+	};
+
+	std::vector<vt::gfx::Vertex> vertices {
+		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
+		vt::gfx::Vertex(quad[1], quad_uv[1], vt::gfx::Color::Green),
+		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
+
+		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
+		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
+		vt::gfx::Vertex(quad[3], quad_uv[3], vt::gfx::Color::White),
+	};
+
+	vt::gfx::Drawable obj { SG_PRIMITIVETYPE_TRIANGLES, vertices };
+	display.draw(obj);
+}
+
 void Engine::run() {
 	while (m_is_active) {
+		m_display.begin();
+		_draw_rect(m_display, 960 / 2, 540 / 2, 128, 128);
+		_draw_rect(m_display, 480 + 128, 270 + 128, 16, 16);
+		m_display.end();
+
 		m_display.present();
 		glfwPollEvents();
 

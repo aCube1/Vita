@@ -1,6 +1,7 @@
 #ifndef _VT_CORE_DISPLAY_HPP
 #define _VT_CORE_DISPLAY_HPP
 
+#include "gfx/RenderBatcher.hpp"
 #include "types.hpp"
 
 #include <string_view>
@@ -9,7 +10,7 @@ struct GLFWwindow;
 
 namespace vt::core {
 
-class Display {
+class Display : public gfx::RenderBatcher {
 public:
 	Display() = default;
 	~Display() = default;
@@ -20,6 +21,9 @@ public:
 	bool create(i32 width, i32 height, std::string_view title);
 	void close();
 
+	void begin() override;
+	void end() override;
+
 	void present();
 
 	// TODO: Window should communicate with the Main Event Bus to expose its events
@@ -29,9 +33,13 @@ private:
 	struct ContextSettings {
 		u32 version_major;
 		u32 version_minor;
+		sg_pixel_format pixel_format;
+		sg_pixel_format depth_format;
+		i32 samples;
 	};
 
 	GLFWwindow *m_window { nullptr };
+	sg_pass m_render_pass;
 	ContextSettings m_context;
 };
 

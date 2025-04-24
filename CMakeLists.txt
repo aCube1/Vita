@@ -5,9 +5,9 @@ project(
 	LANGUAGES CXX
 )
 
-include(cmake/base.cmake)
-include(cmake/libraries.cmake)
-include(cmake/warnings.cmake)
+include("cmake/base.cmake")
+include("cmake/libraries.cmake")
+include("cmake/warnings.cmake")
 
 add_executable(${PROJECT_NAME})
 
@@ -18,14 +18,17 @@ target_compile_features(
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
-		src/core/Engine.cpp
-		src/core/Display.cpp
-		src/math/Rect.cpp
-		src/math/Transform.cpp
-		src/math/Vec2.cpp
-		src/math/Vec3.cpp
-		src/log.cpp
-		src/main.cpp
+		"src/core/Engine.cpp"
+		"src/core/Display.cpp"
+		"src/gfx/Drawable.cpp"
+		"src/gfx/RenderBatcher.cpp"
+		"src/gfx/common.cpp"
+		"src/math/Rect.cpp"
+		"src/math/Transform.cpp"
+		"src/math/Vec2.cpp"
+		"src/math/Vec3.cpp"
+		"src/log.cpp"
+		"src/main.cpp"
 )
 
 target_include_directories(
@@ -37,7 +40,6 @@ target_compile_definitions(
 	${PROJECT_NAME} PRIVATE
 		$<$<CXX_COMPILER_ID:GNU>:VT_COMPILER_GCC>
 		$<$<CXX_COMPILER_ID:Clang>:VT_COMPILER_CLANG>
-		#$<$<CXX_COMPILER_ID:MSVC>:VT_COMPILER_MSVC>
 )
 
 setup_libraries(${PROJECT_NAME})

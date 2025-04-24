@@ -6,7 +6,7 @@
 
 namespace vt::core {
 
-class Engine {
+class Engine final {
 public:
 	Engine();
 	~Engine();
