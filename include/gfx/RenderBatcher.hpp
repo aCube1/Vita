@@ -29,7 +29,6 @@ struct UniformBuffer {
 };
 
 struct BatchState {
-	sg_pass pass;
 	Point framesize;
 	Rect viewport;
 	Rect scissor;
@@ -42,6 +41,9 @@ private:
 	u32 _base_vertex;
 	u32 _base_command;
 	u32 _base_uniform;
+
+	u32 _index;
+	u32 _prev;
 
 	friend class RenderBatcher;
 };
@@ -57,15 +59,16 @@ public:
 	virtual void end() = 0;
 
 	void draw(const Drawable& drawable);
-	void flush();
 
 protected:
 	bool _init(u32 max_vertices = 0, u32 max_commands = 0);
 	void _deinit();
 
-	void _begin_frame(const sg_pass& pass);
-	void _end_frame();
 	void _flush();
+
+	void _begin_state(i32 width, i32 height);
+	void _end_state();
+	void _flush_state(const BatchState& state);
 
 private:
 	enum {
@@ -108,10 +111,11 @@ private:
 	std::vector<BatchCommand> m_commands;
 	std::vector<u8> m_uniform_buffer;
 
-	std::stack<BatchState> m_state_stack;
 	std::stack<Transform> m_transform_stack;
 
-	BatchState m_state;
+	BatchState *m_state {};
+	std::vector<BatchState> m_state_stack;
+
 	sg_buffer m_vertex_buf;
 
 	bool _try_merge_command(const DrawCommand& draw);

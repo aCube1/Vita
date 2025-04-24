@@ -39,7 +39,7 @@ private:
 	};
 
 	GLFWwindow *m_window { nullptr };
-	sg_pass m_render_pass;
+	Point m_framesize;
 	ContextSettings m_context;
 };
 

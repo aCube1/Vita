@@ -19,7 +19,7 @@ void Drawable::append_vertices(const std::span<Vertex>& vertices) {
 }
 
 void Drawable::apply_transform(const Transform& transform) {
-	m_transform = transform;
+	m_model = transform;
 }
 
 void Drawable::set_texture(u32 slot, const Texture& texture) {

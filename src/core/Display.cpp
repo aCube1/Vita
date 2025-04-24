@@ -59,11 +59,10 @@ bool Display::create(i32 width, i32 height, std::string_view title) {
 	}
 
 	glfwSetWindowUserPointer(m_window, this);
-
 	glfwMakeContextCurrent(m_window);
 	_gl_init();
 
-	sg_desc desc;
+	sg_desc desc {};
 	desc.environment.defaults = {
 		.color_format = m_context.pixel_format,
 		.depth_format = m_context.depth_format,
@@ -80,6 +79,8 @@ bool Display::create(i32 width, i32 height, std::string_view title) {
 	}
 
 	_init();
+	m_framesize.w = width;
+	m_framesize.h = height;
 	return true;
 }
 
@@ -93,35 +94,41 @@ void Display::close() {
 }
 
 void Display::begin() {
-	i32 framebuffer_width;
-	i32 framebuffer_height;
+	_begin_state(m_framesize.w, m_framesize.h);
+}
 
-	glfwGetFramebufferSize(m_window, &framebuffer_width, &framebuffer_height);
-	m_render_pass.swapchain.width = framebuffer_width;
-	m_render_pass.swapchain.height = framebuffer_height;
-	m_render_pass.swapchain.sample_count = m_context.samples;
-	m_render_pass.swapchain.color_format = m_context.pixel_format;
-	m_render_pass.swapchain.depth_format = m_context.depth_format;
-	m_render_pass.action.colors[0] = {
+void Display::end() {
+	_end_state();
+}
+
+void Display::present() {
+	sg_pass pass {};
+	pass.swapchain.width = m_framesize.w;
+	pass.swapchain.height = m_framesize.h;
+	pass.swapchain.sample_count = m_context.samples;
+	pass.swapchain.color_format = m_context.pixel_format;
+	pass.swapchain.depth_format = m_context.depth_format;
+	pass.action.colors[0] = {
 		.load_action = SG_LOADACTION_CLEAR,
 		.store_action = SG_STOREACTION_STORE,
 		.clear_value = { 0.2, 0.2, 0.2, 1.0 },
 	};
 
-	_begin_frame(m_render_pass);
-}
-
-void Display::end() {
-	flush();
-	_end_frame();
-}
-
-void Display::present() {
+	sg_begin_pass(pass);
+	_flush();
+	sg_end_pass();
 	sg_commit();
 
 	if (m_window) {
 		glfwSwapBuffers(m_window);
 	}
+
+	i32 framebuffer_width;
+	i32 framebuffer_height;
+	glfwGetFramebufferSize(m_window, &framebuffer_width, &framebuffer_height);
+
+	m_framesize.w = framebuffer_width;
+	m_framesize.h = framebuffer_height;
 }
 
 bool Display::is_open() {

@@ -20,7 +20,7 @@ public:
 private:
 	sg_primitive_type m_primitive;
 	std::vector<Vertex> m_vertices;
-	Transform m_transform;
+	Transform m_model;
 	TexturesUniform m_textures;
 
 	friend class RenderBatcher;

@@ -20,7 +20,7 @@ void RenderBatcher::draw(const Drawable& drawable) {
 		return;
 	}
 
-	Transform mvp = m_state.proj * m_state.view * drawable.m_transform;
+	Transform mvp = m_state->proj * m_state->view * drawable.m_model;
 	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (u32 i = 0; i < vertex_count; i += 1) {
 		const auto& vertex = drawable.m_vertices[i];
@@ -44,9 +44,9 @@ void RenderBatcher::draw(const Drawable& drawable) {
 	draw.vertex_count = vertex_count;
 
 	// Override pipeline if state has set one
-	if (m_state.pipeline.id != SG_INVALID_ID) {
-		draw.pipeline = m_state.pipeline;
-		draw.uniform = m_state.uniform;
+	if (m_state->pipeline.id != SG_INVALID_ID) {
+		draw.pipeline = m_state->pipeline;
+		draw.uniform = m_state->uniform;
 	} else {
 		draw.pipeline = vt::gfx::make_pipeline(drawable.m_primitive);
 		draw.uniform = UniformBuffer {};
@@ -74,14 +74,6 @@ void RenderBatcher::draw(const Drawable& drawable) {
 	cmd->args.draw = draw;
 }
 
-void RenderBatcher::flush() {
-	assert(m_state_stack.size() > 0);
-
-	sg_begin_pass(m_state.pass);
-	_flush();
-	sg_end_pass();
-}
-
 bool RenderBatcher::_init(u32 max_vertices, u32 max_commands) {
 	m_vertices.reserve(max_vertices > 0 ? max_vertices : _DEFAULT_MAX_VERTICES);
 	m_commands.reserve(max_commands > 0 ? max_commands : _DEFAULT_MAX_COMMANDS);
@@ -98,6 +90,7 @@ bool RenderBatcher::_init(u32 max_vertices, u32 max_commands) {
 		return false;
 	}
 
+	_flush();
 	return true;
 }
 
@@ -107,57 +100,81 @@ void RenderBatcher::_deinit() {
 	}
 }
 
-void RenderBatcher::_begin_frame(const sg_pass& pass) {
+void RenderBatcher::_flush() {
+	// Flush all pending commands
+	for (const auto& state : m_state_stack) {
+		_flush_state(state);
+	}
+	m_state_stack.clear();
+
+	// Setup base state
+	m_state_stack.emplace_back();
+	m_state = &m_state_stack.back();
+
+	m_state->framesize.w = 0;
+	m_state->framesize.h = 0;
+	m_state->viewport = Rect {};
+	m_state->scissor = m_state->viewport;
+	m_state->proj = Transform {};
+	m_state->view = Transform {};
+	m_state->pipeline.id = SG_INVALID_ID;
+	m_state->uniform = UniformBuffer {};
+	m_state->_base_vertex = m_cur_vertex;
+	m_state->_base_command = m_cur_command;
+	m_state->_base_uniform = m_cur_uniform;
+
+	m_state->_index = 0;
+	m_state->_prev = 0;
+}
+
+void RenderBatcher::_begin_state(i32 width, i32 height) {
+	assert(width > 0 && height > 0);
+
 	if (m_state_stack.size() >= _MAX_STACK_DEPTH) {
 		vt::log::fatal("[GFX] | RenderBatcher > State stack overflow");
 		return; // [[noreturn]]
 	}
 
 	// Setup new state
-	m_state_stack.push(m_state); // Store current state
+	u32 prev_idx = m_state->_index;
+	m_state_stack.emplace_back();
+	m_state = &m_state_stack.back();
 
-	// Query framesize
-	m_state.pass = pass;
-	if (m_state.pass.attachments.id != SG_INVALID_ID) {
-		auto attachments = sg_query_attachments_desc(m_state.pass.attachments);
-		m_state.framesize.w = sg_query_image_width(attachments.colors[0].image);
-		m_state.framesize.h = sg_query_image_height(attachments.colors[0].image);
-	} else {
-		m_state.framesize.w = m_state.pass.swapchain.width;
-		m_state.framesize.h = m_state.pass.swapchain.height;
-	}
+	m_state->framesize.w = width;
+	m_state->framesize.h = height;
+	m_state->viewport = Rect { Vec2::Zero, m_state->framesize };
+	m_state->scissor = m_state->viewport;
+	m_state->proj = Transform::ortho(0.0, width, height, 0.0);
+	m_state->view = Transform {};
+	m_state->pipeline.id = SG_INVALID_ID;
+	m_state->uniform = UniformBuffer {};
+	m_state->_base_vertex = m_cur_vertex;
+	m_state->_base_command = m_cur_command;
+	m_state->_base_uniform = m_cur_uniform;
 
-	m_state.viewport = Rect { Vec2::Zero, m_state.framesize };
-	m_state.scissor = m_state.viewport;
-	m_state.proj = Transform::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
-	m_state.view = Transform {};
-	m_state.pipeline.id = SG_INVALID_ID;
-	m_state.uniform = UniformBuffer {};
-	m_state._base_vertex = m_cur_vertex;
-	m_state._base_command = m_cur_command;
-	m_state._base_uniform = m_cur_uniform;
+	m_state->_index = m_state_stack.size() - 1;
+	m_state->_prev = prev_idx;
 }
 
-void RenderBatcher::_end_frame() {
+void RenderBatcher::_end_state() {
 	if (m_state_stack.size() <= 0) {
 		vt::log::fatal("[GFX] | RenderBatcher > State stack underflow");
 		return; // [[noreturn]]
 	}
 
-	m_state = m_state_stack.top();
-	m_state_stack.pop();
+	m_state = &m_state_stack[m_state->_prev];
 }
 
-void RenderBatcher::_flush() {
+void RenderBatcher::_flush_state(const BatchState& state) {
 	assert(m_state_stack.size() > 0);
 
 	u32 end_vertex = m_cur_vertex;
 	u32 end_command = m_cur_command;
 
 	// Rewind indexes
-	m_cur_vertex = m_state._base_vertex;
-	m_cur_command = m_state._base_command;
-	m_cur_uniform = m_state._base_uniform;
+	m_cur_vertex = state._base_vertex;
+	m_cur_command = state._base_command;
+	m_cur_uniform = state._base_uniform;
 
 	// Check if there's any command in this state
 	if (end_command <= m_cur_command) {
@@ -165,8 +182,8 @@ void RenderBatcher::_flush() {
 	}
 
 	sg_range vertices_range = {
-		.ptr = &m_vertices[m_state._base_vertex],
-		.size = (end_vertex - m_state._base_vertex) * sizeof(Vertex),
+		.ptr = &m_vertices[state._base_vertex],
+		.size = (end_vertex - state._base_vertex) * sizeof(Vertex),
 	};
 	u32 offset = sg_append_buffer(m_vertex_buf, vertices_range);
 	if (sg_query_buffer_overflow(m_vertex_buf)) {
@@ -187,7 +204,7 @@ void RenderBatcher::_flush() {
 	binds.vertex_buffer_offsets[0] = offset;
 
 	auto commands = std::span(
-		m_commands.begin() + m_state._base_command, end_command - m_cur_command
+		m_commands.begin() + state._base_command, end_command - m_cur_command
 	);
 
 	for (const auto& cmd : commands) {
@@ -272,7 +289,7 @@ void RenderBatcher::_flush() {
 				}
 			}
 
-			sg_draw(draw.vertex_idx - m_state._base_vertex, draw.vertex_count, 1);
+			sg_draw(draw.vertex_idx - state._base_vertex, draw.vertex_count, 1);
 		} break;
 
 		case BatchCommandType::None: break; // Command was merged
@@ -454,7 +471,7 @@ RenderBatcher::BatchCommand *RenderBatcher::_next_command() {
 }
 
 RenderBatcher::BatchCommand *RenderBatcher::_prev_command(u32 depth) {
-	if ((m_cur_command - m_state._base_command) < depth) {
+	if ((m_cur_command - m_state->_base_command) < depth) {
 		return nullptr;
 	}
 
