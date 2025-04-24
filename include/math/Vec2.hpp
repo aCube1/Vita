@@ -15,6 +15,7 @@
 namespace vt {
 
 struct [[nodiscard]] Vec2 {
+	static const Vec2 Zero;	 // x: 0.0 | y: 0.0
 	static const Vec2 One;	 // x: 1.0 | y: 1.0
 	static const Vec2 Up;	 // x: 0.0 | y:-1.0
 	static const Vec2 Down;	 // x: 0.0 | y: 1.0

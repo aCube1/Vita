@@ -15,6 +15,7 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakBeforeMultilineStrings: true
 BinPackParameters: false
 BreakBeforeBinaryOperators: NonAssignment
 BreakTemplateDeclarations: Yes

@@ -1,6 +1,7 @@
 #ifndef _VT_MATH_TRANSFORM_HPP
 #define _VT_MATH_TRANSFORM_HPP
 
+#include "math/Vec3.hpp"
 #include "types.hpp"
 
 #include <cglm/mat4.h>
@@ -32,10 +33,17 @@ struct [[nodiscard]] Transform {
 	}
 
 	static Transform ortho(
-		f32 left, f32 right, f32 bottom, f32 top, f32 near_z, f32 far_z
+		f32 left, f32 right, f32 bottom, f32 top, f32 near_z = -1.0, f32 far_z = 1.0
 	);
 
+	void translate(const Vec3& offset);
+	void scale(const Vec2& scale);
+	void scale(f32 scale);
+	void rotate(f32 angle);
+	void rotate_at(const Vec2& pivot, f32 angle);
+
 	Transform operator*(const Transform& other) const;
+	Vec3 operator*(const Vec3& other) const;
 
 	constexpr Transform& operator*=(const Transform& other) {
 		glm_mat4_mul(raw, const_cast<vec4 *>(other.raw), raw);

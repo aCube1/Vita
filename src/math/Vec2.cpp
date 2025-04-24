@@ -4,6 +4,7 @@
 
 using namespace vt;
 
+const Vec2 Vec2::Zero { 0.0, 0.0 };
 const Vec2 Vec2::One { 1.0, 1.0 };
 const Vec2 Vec2::Up { 0.0, -1.0 };
 const Vec2 Vec2::Down { 0.0, 1.0 };

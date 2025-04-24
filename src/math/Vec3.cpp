@@ -4,7 +4,8 @@
 
 using namespace vt;
 
-const Vec3 Vec3::One { 1.0, 1.0, 0.0 };
+const Vec3 Vec3::Zero { 0.0, 0.0, 0.0 };
+const Vec3 Vec3::One { 1.0, 1.0, 1.0 };
 const Vec3 Vec3::Up { 0.0, -1.0, 0.0 };
 const Vec3 Vec3::Down { 0.0, 1.0, 0.0 };
 const Vec3 Vec3::Left { -1.0, 0.0, 0.0 };
