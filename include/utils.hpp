@@ -2,6 +2,7 @@
 #define _VT_UTILS_HPP
 
 #include <cstring>
+#include <type_traits>
 
 #if defined(WIN32) || defined(_WIN32)
 #	define VT_PLATFORM_WINDOWS 1
@@ -20,5 +21,12 @@
 #endif
 
 #define VT_UNUSED(x) ((void)x)
+
+namespace vt {
+
+template <typename T>
+concept AsNumeric = std::is_arithmetic_v<T>;
+
+}
 
 #endif

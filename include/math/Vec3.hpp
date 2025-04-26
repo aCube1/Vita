@@ -70,28 +70,28 @@ struct [[nodiscard]] Vec3 {
 	constexpr Vec3& operator/=(const Vec3& other);
 	constexpr bool operator==(const Vec3& other) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec3 operator+(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec3 operator-(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec3 operator*(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec3 operator/(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec3& operator+=(T scalar);
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec3& operator-=(T scalar);
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec3& operator*=(T scalar);
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec3& operator/=(T scalar);
 };
 

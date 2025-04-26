@@ -2,6 +2,7 @@
 #define _VT_MATH_VEC2_HPP
 
 #include "types.hpp"
+#include "utils.hpp"
 
 #include <cglm/types.h>
 #include <cglm/vec2.h>
@@ -75,28 +76,28 @@ struct [[nodiscard]] Vec2 {
 	constexpr Vec2& operator/=(const Vec2& other);
 	constexpr bool operator==(const Vec2& other) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec2 operator+(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec2 operator-(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec2 operator*(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	Vec2 operator/(T scalar) const;
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec2& operator+=(T scalar);
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec2& operator-=(T scalar);
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec2& operator*=(T scalar);
 
-	template <typename T>
+	template <AsNumeric T>
 	constexpr Vec2& operator/=(T scalar);
 };
 

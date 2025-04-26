@@ -35,7 +35,7 @@ constexpr bool Vec2::operator==(const Vec2& other) const {
 	return raw[0] == other.raw[0] && raw[1] == other.raw[1];
 }
 
-template <typename T>
+template <AsNumeric T>
 Vec2 Vec2::operator+(T scalar) const {
 	return Vec2 {
 		raw[0] + static_cast<f32>(scalar),
@@ -43,7 +43,7 @@ Vec2 Vec2::operator+(T scalar) const {
 	};
 }
 
-template <typename T>
+template <AsNumeric T>
 Vec2 Vec2::operator-(T scalar) const {
 	return Vec2 {
 		raw[0] - static_cast<f32>(scalar),
@@ -51,7 +51,7 @@ Vec2 Vec2::operator-(T scalar) const {
 	};
 }
 
-template <typename T>
+template <AsNumeric T>
 Vec2 Vec2::operator*(T scalar) const {
 	return Vec2 {
 		raw[0] * static_cast<f32>(scalar),
@@ -59,7 +59,7 @@ Vec2 Vec2::operator*(T scalar) const {
 	};
 }
 
-template <typename T>
+template <AsNumeric T>
 Vec2 Vec2::operator/(T scalar) const {
 	return Vec2 {
 		raw[0] / static_cast<f32>(scalar),
@@ -67,7 +67,7 @@ Vec2 Vec2::operator/(T scalar) const {
 	};
 }
 
-template <typename T>
+template <AsNumeric T>
 constexpr Vec2& Vec2::operator+=(T scalar) {
 	raw[0] += static_cast<f32>(scalar);
 	raw[1] += static_cast<f32>(scalar);
@@ -75,7 +75,7 @@ constexpr Vec2& Vec2::operator+=(T scalar) {
 	return *this;
 }
 
-template <typename T>
+template <AsNumeric T>
 constexpr Vec2& Vec2::operator-=(T scalar) {
 	raw[0] -= static_cast<f32>(scalar);
 	raw[1] -= static_cast<f32>(scalar);
@@ -83,7 +83,7 @@ constexpr Vec2& Vec2::operator-=(T scalar) {
 	return *this;
 }
 
-template <typename T>
+template <AsNumeric T>
 constexpr Vec2& Vec2::operator*=(T scalar) {
 	raw[0] *= static_cast<f32>(scalar);
 	raw[1] *= static_cast<f32>(scalar);
@@ -91,7 +91,7 @@ constexpr Vec2& Vec2::operator*=(T scalar) {
 	return *this;
 }
 
-template <typename T>
+template <AsNumeric T>
 constexpr Vec2& Vec2::operator/=(T scalar) {
 	raw[0] /= static_cast<f32>(scalar);
 	raw[1] /= static_cast<f32>(scalar);
