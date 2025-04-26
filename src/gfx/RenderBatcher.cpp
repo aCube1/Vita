@@ -20,7 +20,8 @@ void RenderBatcher::draw(const Drawable& drawable) {
 		return;
 	}
 
-	Transform mvp = m_state->proj * m_state->view * drawable.m_model;
+	const Transform& model = drawable.get_transform();
+	Transform mvp = m_state->proj * m_state->view * model;
 	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (u32 i = 0; i < vertex_count; i += 1) {
 		const auto& vertex = drawable.m_vertices[i];

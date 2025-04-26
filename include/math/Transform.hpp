@@ -15,7 +15,7 @@
 
 namespace vt {
 
-struct [[nodiscard]] Transform {
+struct Transform {
 	union {
 		mat4 raw = GLM_MAT4_IDENTITY_INIT;
 
@@ -32,25 +32,23 @@ struct [[nodiscard]] Transform {
 		glm_mat4_make(m, raw);
 	}
 
-	static Transform ortho(
+	[[nodiscard]] static Transform ortho(
 		f32 left, f32 right, f32 bottom, f32 top, f32 near_z = -1.0, f32 far_z = 1.0
 	);
 
-	void translate(const Vec3& offset);
-	void scale(const Vec2& scale);
-	void scale(f32 scale);
-	void rotate(f32 angle);
-	void rotate_at(const Vec2& pivot, f32 angle);
+	Transform& translate(const Vec3& offset);
+	Transform& rotate(f32 angle, const Vec2& origin);
+	Transform& scale(const Vec2& scale);
 
-	Transform operator*(const Transform& other) const;
-	Vec3 operator*(const Vec3& other) const;
+	[[nodiscard]] Transform operator*(const Transform& other) const;
+	[[nodiscard]] Vec3 operator*(const Vec3& other) const;
 
-	constexpr Transform& operator*=(const Transform& other) {
+	[[nodiscard]] constexpr Transform& operator*=(const Transform& other) {
 		glm_mat4_mul(raw, const_cast<vec4 *>(other.raw), raw);
 		return *this;
 	}
 
-	constexpr bool operator==(const Transform& other) const {
+	[[nodiscard]] constexpr bool operator==(const Transform& other) const {
 		return raw[0][0] == other.raw[0][0] && raw[1][1] == other.raw[1][1] //
 			&& raw[2][2] == other.raw[2][2] && raw[3][3] == other.raw[3][3];
 	}

@@ -1,7 +1,6 @@
 #include "core/Engine.hpp"
 
 #include "log.hpp"
-#include "utils.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -57,12 +56,10 @@ static void _draw_rect(Display& display, f32 x, f32 y, f32 w, f32 h) {
 		vt::gfx::Vertex(quad[3], quad_uv[3], vt::gfx::Color::White),
 	};
 
-	vt::Transform transform {};
-	transform.translate(vt::Vec3 { x, y, 0.0 });
-	transform.rotate(glfwGetTime());
-
 	vt::gfx::Drawable obj { SG_PRIMITIVETYPE_TRIANGLES, vertices };
-	obj.apply_transform(transform);
+	obj.set_origin(vt::Vec2(w / 2, h / 2));
+	obj.translate(vt::Vec3 { x, y, 0.0 });
+	obj.rotate(glfwGetTime());
 
 	display.draw(obj);
 }
@@ -76,13 +73,13 @@ void Engine::run() {
 
 		m_display.begin();
 		_draw_rect(m_display, 0, 0, 128, 128);
-		_draw_rect(m_display, 480, 0, 16, 16);
 
 		{
 			m_display.begin();
 			_draw_rect(m_display, 0, 270, 32, 32);
 			m_display.end();
 		}
+		_draw_rect(m_display, 480, 0, 16, 16);
 		m_display.end();
 
 		m_display.present();
