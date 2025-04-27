@@ -3,6 +3,7 @@
 
 #include "gfx/Drawable.hpp"
 #include "gfx/common.hpp"
+#include "math/Matrix.hpp"
 #include "math/Rect.hpp"
 #include "math/Transform.hpp"
 #include "math/Vec2.hpp"
@@ -33,8 +34,8 @@ struct BatchState {
 	Rect viewport;
 	Rect scissor;
 	sg_pipeline pipeline;
-	Transform proj;
-	Transform view;
+	Matrix proj;
+	Matrix view;
 	UniformBuffer uniform;
 
 private:
@@ -58,7 +59,7 @@ public:
 	virtual void begin() = 0;
 	virtual void end() = 0;
 
-	void draw(const Drawable& drawable);
+	void draw(const Drawable& drawable, const Transform& transform);
 
 protected:
 	bool _init(u32 max_vertices = 0, u32 max_commands = 0);
@@ -111,7 +112,7 @@ private:
 	std::vector<BatchCommand> m_commands;
 	std::vector<u8> m_uniform_buffer;
 
-	std::stack<Transform> m_transform_stack;
+	std::stack<Matrix> m_transform_stack;
 
 	BatchState *m_state {};
 	std::vector<BatchState> m_state_stack;

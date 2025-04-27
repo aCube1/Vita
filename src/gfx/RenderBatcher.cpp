@@ -6,7 +6,7 @@
 
 using namespace vt::gfx;
 
-void RenderBatcher::draw(const Drawable& drawable) {
+void RenderBatcher::draw(const Drawable& drawable, const Transform& transform) {
 	assert(m_state_stack.size() > 0);
 
 	if (drawable.m_vertices.empty()) {
@@ -20,8 +20,8 @@ void RenderBatcher::draw(const Drawable& drawable) {
 		return;
 	}
 
-	const Transform& model = drawable.get_transform();
-	Transform mvp = m_state->proj * m_state->view * model;
+	const Matrix& model = transform.get_matrix();
+	Matrix mvp = m_state->proj * m_state->view * model;
 	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (u32 i = 0; i < vertex_count; i += 1) {
 		const auto& vertex = drawable.m_vertices[i];
@@ -116,8 +116,8 @@ void RenderBatcher::_flush() {
 	m_state->framesize.h = 0;
 	m_state->viewport = Rect {};
 	m_state->scissor = m_state->viewport;
-	m_state->proj = Transform {};
-	m_state->view = Transform {};
+	m_state->proj = Matrix {};
+	m_state->view = Matrix {};
 	m_state->pipeline.id = SG_INVALID_ID;
 	m_state->uniform = UniformBuffer {};
 	m_state->_base_vertex = m_cur_vertex;
@@ -145,8 +145,8 @@ void RenderBatcher::_begin_state(i32 width, i32 height) {
 	m_state->framesize.h = height;
 	m_state->viewport = Rect { Vec2::Zero, m_state->framesize };
 	m_state->scissor = m_state->viewport;
-	m_state->proj = Transform::ortho(0.0, width, height, 0.0);
-	m_state->view = Transform {};
+	m_state->proj = Matrix::ortho(0.0, width, height, 0.0);
+	m_state->view = Matrix {};
 	m_state->pipeline.id = SG_INVALID_ID;
 	m_state->uniform = UniformBuffer {};
 	m_state->_base_vertex = m_cur_vertex;

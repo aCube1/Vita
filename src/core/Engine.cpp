@@ -57,11 +57,12 @@ static void _draw_rect(Display& display, f32 x, f32 y, f32 w, f32 h) {
 	};
 
 	vt::gfx::Drawable obj { SG_PRIMITIVETYPE_TRIANGLES, vertices };
-	obj.set_origin(vt::Vec2(w / 2, h / 2));
-	obj.translate(vt::Vec3 { x, y, 0.0 });
-	obj.rotate(glfwGetTime());
+	vt::Transform transform;
+	transform.set_origin(vt::Vec2(w / 2, h / 2));
+	transform.translate(vt::Vec3 { x, y, 0.0 });
+	transform.rotate(glfwGetTime());
 
-	display.draw(obj);
+	display.draw(obj, transform);
 }
 
 void Engine::run() {

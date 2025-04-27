@@ -23,6 +23,7 @@ target_sources(
 		"src/gfx/Drawable.cpp"
 		"src/gfx/RenderBatcher.cpp"
 		"src/gfx/common.cpp"
+		"src/math/Matrix.cpp"
 		"src/math/Rect.cpp"
 		"src/math/Transform.cpp"
 		"src/math/Vec2.cpp"

@@ -1,57 +1,38 @@
 #ifndef _VT_MATH_TRANSFORM_HPP
 #define _VT_MATH_TRANSFORM_HPP
 
+#include "math/Matrix.hpp"
 #include "math/Vec3.hpp"
-#include "types.hpp"
-
-#include <cglm/mat4.h>
-#include <cglm/types.h>
-
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
 
 namespace vt {
 
-struct Transform {
-	union {
-		mat4 raw = GLM_MAT4_IDENTITY_INIT;
-
-		struct {
-			f32 m00, m01, m02, m03;
-			f32 m10, m11, m12, m13;
-			f32 m20, m21, m22, m23;
-			f32 m30, m31, m32, m33;
-		};
-	};
-
+class Transform {
+public:
 	Transform() = default;
-	Transform(const f32 *m) {
-		glm_mat4_make(m, raw);
-	}
-
-	[[nodiscard]] static Transform ortho(
-		f32 left, f32 right, f32 bottom, f32 top, f32 near_z = -1.0, f32 far_z = 1.0
-	);
 
 	Transform& translate(const Vec3& offset);
-	Transform& rotate(f32 angle, const Vec2& origin);
-	Transform& scale(const Vec2& scale);
+	Transform& rotate(f32 angle);
+	Transform& scale(const Vec2& factor);
 
-	[[nodiscard]] Transform operator*(const Transform& other) const;
-	[[nodiscard]] Vec3 operator*(const Vec3& other) const;
+	void set_origin(const Vec2& origin);
+	void set_position(const Vec3& position);
+	void set_angle(f32 angle);
+	void set_scale(const Vec2& scale);
 
-	[[nodiscard]] constexpr Transform& operator*=(const Transform& other) {
-		glm_mat4_mul(raw, const_cast<vec4 *>(other.raw), raw);
-		return *this;
-	}
+	[[nodiscard]] const Vec2& get_origin() const;
+	[[nodiscard]] const Vec3& get_position() const;
+	[[nodiscard]] f32 get_rotation() const;
+	[[nodiscard]] const Vec2& get_scale() const;
 
-	[[nodiscard]] constexpr bool operator==(const Transform& other) const {
-		return raw[0][0] == other.raw[0][0] && raw[1][1] == other.raw[1][1] //
-			&& raw[2][2] == other.raw[2][2] && raw[3][3] == other.raw[3][3];
-	}
+	[[nodiscard]] const Matrix& get_matrix() const;
+
+private:
+	Vec2 m_origin;
+	Vec3 m_position;
+	f32 m_rotation {};
+	Vec2 m_scale { 1.0, 1.0 };
+	mutable Matrix m_transform;
+	mutable bool m_update_transform { true };
 };
 
 } // namespace vt
