@@ -33,9 +33,9 @@ struct BatchState {
 	Point framesize;
 	Rect viewport;
 	Rect scissor;
-	sg_pipeline pipeline;
 	Matrix proj;
 	Matrix view;
+	sg_pipeline pipeline;
 	UniformBuffer uniform;
 
 private:
@@ -60,6 +60,9 @@ public:
 	virtual void end() = 0;
 
 	void draw(const Drawable& drawable, const Transform& transform);
+
+	void apply_viewport(f32 x, f32 y, f32 w, f32 h);
+	void apply_scissor(f32 x, f32 y, f32 w, f32 h);
 
 protected:
 	bool _init(u32 max_vertices = 0, u32 max_commands = 0);

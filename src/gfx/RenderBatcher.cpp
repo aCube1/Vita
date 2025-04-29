@@ -32,10 +32,10 @@ void RenderBatcher::draw(const Drawable& drawable, const Transform& transform) {
 		vertices[i].texcoord = vertex.texcoord;
 
 		// Update region area the rendering takes
-		region.pos.x = std::min(region.pos.x, vertices[i].position.x);
-		region.pos.y = std::min(region.pos.y, vertices[i].position.y);
-		region.end.x = std::max(region.end.x, vertices[i].position.x);
-		region.end.y = std::max(region.end.y, vertices[i].position.y);
+		region.x1 = std::min(region.x1, vertices[i].position.x);
+		region.y1 = std::min(region.y1, vertices[i].position.y);
+		region.x2 = std::max(region.x2, vertices[i].position.x);
+		region.y2 = std::max(region.y2, vertices[i].position.y);
 	}
 
 	DrawCommand draw;
@@ -71,8 +71,79 @@ void RenderBatcher::draw(const Drawable& drawable, const Transform& transform) {
 		return;
 	}
 
+	std::memset(cmd, 0, sizeof(BatchCommand));
 	cmd->type = BatchCommandType::Draw;
 	cmd->args.draw = draw;
+}
+
+void RenderBatcher::apply_viewport(f32 x, f32 y, f32 w, f32 h) {
+	assert(m_state_stack.size() > 0);
+
+	Rect viewport { x, y, w, h };
+
+	// Skip if nothing has changed
+	if (m_state->viewport == viewport) {
+		return;
+	}
+
+	// Try to reuse previous command
+	auto *cmd = _prev_command(1);
+	if (!cmd || cmd->type != BatchCommandType::Viewport) {
+		cmd = _next_command();
+		if (!cmd) {
+			return;
+		}
+	}
+
+	std::memset(cmd, 0, sizeof(BatchCommand));
+	cmd->type = BatchCommandType::Viewport;
+	cmd->args.viewport = viewport;
+
+	// Adjust state scissor offset relative to the new viewport
+	if (m_state->scissor.w > 0 && m_state->scissor.h > 0) {
+		m_state->scissor.x += viewport.x - m_state->viewport.x;
+		m_state->scissor.y += viewport.y - m_state->viewport.y;
+	}
+
+	m_state->viewport = viewport;
+
+	// Reset projection
+	m_state->proj = Matrix::ortho(0.0, viewport.w, viewport.h, 0.0);
+}
+
+void RenderBatcher::apply_scissor(f32 x, f32 y, f32 w, f32 h) {
+	assert(m_state_stack.size() > 0);
+
+	Rect scissor { x, y, w, h };
+
+	// Skip if nothing has changed
+	if (m_state->scissor == scissor) {
+		return;
+	}
+
+	// Try to reuse previous command
+	auto *cmd = _prev_command(1);
+	if (!cmd || cmd->type != BatchCommandType::Scissor) {
+		cmd = _next_command();
+		if (!cmd) {
+			return;
+		}
+	}
+
+	// Adjust scissor offset relative to the current viewport
+	scissor.x += m_state->viewport.x;
+	scissor.y += m_state->viewport.y;
+
+	// Reset scissor if invalid
+	if (w < 0.0 && h < 0.0) {
+		scissor = Rect { 0.0, 0.0, m_state->framesize.w, m_state->framesize.h };
+	}
+
+	std::memset(cmd, 0, sizeof(BatchCommand));
+	cmd->type = BatchCommandType::Scissor;
+	cmd->args.scissor = scissor;
+
+	m_state->scissor = scissor;
 }
 
 bool RenderBatcher::_init(u32 max_vertices, u32 max_commands) {
@@ -91,7 +162,6 @@ bool RenderBatcher::_init(u32 max_vertices, u32 max_commands) {
 		return false;
 	}
 
-	_flush();
 	return true;
 }
 
@@ -107,25 +177,11 @@ void RenderBatcher::_flush() {
 		_flush_state(state);
 	}
 	m_state_stack.clear();
+	m_state = nullptr;
 
-	// Setup base state
-	m_state_stack.emplace_back();
-	m_state = &m_state_stack.back();
-
-	m_state->framesize.w = 0;
-	m_state->framesize.h = 0;
-	m_state->viewport = Rect {};
-	m_state->scissor = m_state->viewport;
-	m_state->proj = Matrix {};
-	m_state->view = Matrix {};
-	m_state->pipeline.id = SG_INVALID_ID;
-	m_state->uniform = UniformBuffer {};
-	m_state->_base_vertex = m_cur_vertex;
-	m_state->_base_command = m_cur_command;
-	m_state->_base_uniform = m_cur_uniform;
-
-	m_state->_index = 0;
-	m_state->_prev = 0;
+	m_cur_vertex = 0;
+	m_cur_command = 0;
+	m_cur_uniform = 0;
 }
 
 void RenderBatcher::_begin_state(i32 width, i32 height) {
@@ -137,14 +193,14 @@ void RenderBatcher::_begin_state(i32 width, i32 height) {
 	}
 
 	// Setup new state
-	u32 prev_idx = m_state->_index;
+	u32 prev_idx = m_state ? m_state->_index : 0;
 	m_state_stack.emplace_back();
 	m_state = &m_state_stack.back();
 
 	m_state->framesize.w = width;
 	m_state->framesize.h = height;
-	m_state->viewport = Rect { Vec2::Zero, m_state->framesize };
-	m_state->scissor = m_state->viewport;
+	m_state->viewport = Rect { 0.0, 0.0, (f32)width, (f32)height };
+	m_state->scissor = Rect { 0.0, 0.0, -1.0, -1.0 };
 	m_state->proj = Matrix::ortho(0.0, width, height, 0.0);
 	m_state->view = Matrix {};
 	m_state->pipeline.id = SG_INVALID_ID;
@@ -167,8 +223,6 @@ void RenderBatcher::_end_state() {
 }
 
 void RenderBatcher::_flush_state(const BatchState& state) {
-	assert(m_state_stack.size() > 0);
-
 	u32 end_vertex = m_cur_vertex;
 	u32 end_command = m_cur_command;
 
@@ -207,21 +261,16 @@ void RenderBatcher::_flush_state(const BatchState& state) {
 	auto commands = std::span(
 		m_commands.begin() + state._base_command, end_command - m_cur_command
 	);
-
 	for (const auto& cmd : commands) {
 		switch (cmd.type) {
 		case BatchCommandType::Viewport: {
-			Rect viewport = cmd.args.viewport;
-			sg_apply_viewportf(
-				viewport.pos.x, viewport.pos.y, viewport.size.w, viewport.size.h, true
-			);
+			const Rect& viewport = cmd.args.viewport;
+			sg_apply_viewport(viewport.x, viewport.y, viewport.w, viewport.h, true);
 		} break;
 
 		case BatchCommandType::Scissor: {
-			Rect scissor = cmd.args.scissor;
-			sg_apply_scissor_rectf(
-				scissor.pos.x, scissor.pos.y, scissor.size.w, scissor.size.h, true
-			);
+			const Rect& scissor = cmd.args.scissor;
+			sg_apply_scissor_rect(scissor.x, scissor.y, scissor.w, scissor.h, true);
 		} break;
 
 		case BatchCommandType::Draw: {
@@ -393,8 +442,11 @@ bool RenderBatcher::_try_merge_command(const RenderBatcher::DrawCommand& draw) {
 		}
 
 		// Update render region
-		prev_region.pos = prev_region.pos.min(draw.region.pos);
-		prev_region.end = prev_region.end.min(draw.region.end);
+		prev_region.x1 = std::min(prev_region.x1, draw.region.x1);
+		prev_region.y1 = std::min(prev_region.y1, draw.region.y1);
+		prev_region.x2 = std::max(prev_region.x2, draw.region.x2);
+		prev_region.y2 = std::max(prev_region.y2, draw.region.y2);
+
 		prev_cmd->args.draw.vertex_count += draw.vertex_count;
 		prev_cmd->args.draw.region = prev_region;
 	} else { // Merge with next command
@@ -433,10 +485,13 @@ bool RenderBatcher::_try_merge_command(const RenderBatcher::DrawCommand& draw) {
 		m_cur_vertex += draw.vertex_count;
 
 		// Update render region
-		prev_region.pos = prev_region.pos.min(draw.region.pos);
-		prev_region.end = prev_region.end.min(draw.region.end);
+		prev_region.x1 = std::min(prev_region.x1, draw.region.x1);
+		prev_region.y1 = std::min(prev_region.y1, draw.region.y1);
+		prev_region.x2 = std::max(prev_region.x2, draw.region.x2);
+		prev_region.y2 = std::max(prev_region.y2, draw.region.y2);
 
 		// Setup new command
+		std::memset(cmd, 0, sizeof(BatchCommand));
 		cmd->type = BatchCommandType::Draw;
 		cmd->args.draw.pipeline = draw.pipeline;
 		cmd->args.draw.region = prev_region;
