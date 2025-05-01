@@ -43,9 +43,6 @@ private:
 	u32 _base_command;
 	u32 _base_uniform;
 
-	u32 _index;
-	u32 _prev;
-
 	friend class RenderBatcher;
 };
 
@@ -56,23 +53,20 @@ public:
 	RenderBatcher(const RenderBatcher&) = delete;
 	RenderBatcher& operator=(const RenderBatcher&) = delete;
 
-	virtual void begin() = 0;
-	virtual void end() = 0;
+	bool init(u32 max_vertices = 0, u32 max_commands = 0);
+	void terminate();
+
+	void begin(const sg_pass& pass);
+	void end();
+
+	void push_state();
+	void pop_state();
+	void flush();
 
 	void draw(const Drawable& drawable, const Transform& transform);
 
 	void apply_viewport(f32 x, f32 y, f32 w, f32 h);
 	void apply_scissor(f32 x, f32 y, f32 w, f32 h);
-
-protected:
-	bool _init(u32 max_vertices = 0, u32 max_commands = 0);
-	void _deinit();
-
-	void _flush();
-
-	void _begin_state(i32 width, i32 height);
-	void _end_state();
-	void _flush_state(const BatchState& state);
 
 private:
 	enum {
@@ -108,6 +102,16 @@ private:
 		} args;
 	};
 
+	struct RenderPass {
+		bool in_pass = false;
+		Point framesize;
+	};
+
+	bool m_is_valid = false;
+	RenderPass m_cur_pass {};
+	BatchState m_state {};
+	sg_buffer m_vertex_buf;
+
 	u32 m_cur_vertex {};
 	u32 m_cur_command {};
 	u32 m_cur_uniform {};
@@ -116,11 +120,7 @@ private:
 	std::vector<u8> m_uniform_buffer;
 
 	std::stack<Matrix> m_transform_stack;
-
-	BatchState *m_state {};
-	std::vector<BatchState> m_state_stack;
-
-	sg_buffer m_vertex_buf;
+	std::stack<BatchState> m_state_stack;
 
 	bool _try_merge_command(const DrawCommand& draw);
 

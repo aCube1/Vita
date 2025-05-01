@@ -78,14 +78,21 @@ bool Display::create(i32 width, i32 height, std::string_view title) {
 		return false;
 	}
 
-	_init();
-	m_framesize.w = width;
-	m_framesize.h = height;
+	m_pass.swapchain.width = width;
+	m_pass.swapchain.height = height;
+	m_pass.swapchain.sample_count = m_context.samples;
+	m_pass.swapchain.color_format = m_context.pixel_format;
+	m_pass.swapchain.depth_format = m_context.depth_format;
+	m_pass.action.colors[0] = {
+		.load_action = SG_LOADACTION_CLEAR,
+		.store_action = SG_STOREACTION_STORE,
+		.clear_value = { 0.2, 0.2, 0.2, 1.0 },
+	};
+
 	return true;
 }
 
 void Display::close() {
-	_deinit();
 	sg_shutdown();
 
 	if (m_window) {
@@ -93,32 +100,8 @@ void Display::close() {
 	}
 }
 
-void Display::begin() {
-	_begin_state(m_framesize.w, m_framesize.h);
-}
-
-void Display::end() {
-	_end_state();
-}
-
 void Display::present() {
-	sg_pass pass {};
-	pass.swapchain.width = m_framesize.w;
-	pass.swapchain.height = m_framesize.h;
-	pass.swapchain.sample_count = m_context.samples;
-	pass.swapchain.color_format = m_context.pixel_format;
-	pass.swapchain.depth_format = m_context.depth_format;
-	pass.action.colors[0] = {
-		.load_action = SG_LOADACTION_CLEAR,
-		.store_action = SG_STOREACTION_STORE,
-		.clear_value = { 0.2, 0.2, 0.2, 1.0 },
-	};
-
-	sg_begin_pass(pass);
-	_flush();
-	sg_end_pass();
 	sg_commit();
-
 	if (m_window) {
 		glfwSwapBuffers(m_window);
 	}
@@ -127,8 +110,12 @@ void Display::present() {
 	i32 framebuffer_height;
 	glfwGetFramebufferSize(m_window, &framebuffer_width, &framebuffer_height);
 
-	m_framesize.w = framebuffer_width;
-	m_framesize.h = framebuffer_height;
+	m_pass.swapchain.width = framebuffer_width;
+	m_pass.swapchain.height = framebuffer_height;
+}
+
+[[nodiscard]] const sg_pass& Display::get_pass() const {
+	return m_pass;
 }
 
 bool Display::is_open() {

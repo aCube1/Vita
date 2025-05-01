@@ -2,6 +2,7 @@
 #define _VT_CORE_ENGINE_HPP
 
 #include "core/Display.hpp"
+#include "gfx/RenderBatcher.hpp"
 #include "types.hpp"
 
 namespace vt::core {
@@ -18,6 +19,7 @@ public:
 
 private:
 	Display m_display;
+	gfx::RenderBatcher m_render;
 	bool m_is_active { true };
 };
 

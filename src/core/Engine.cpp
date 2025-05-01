@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 
 using namespace vt::core;
+using namespace vt::gfx;
 
 static void _glfw_log_error_callback(i32 err, const char *msg) {
 	vt::log::error("[ENGINE] | GLFW {} > {}", err, msg);
@@ -15,13 +16,19 @@ Engine::Engine() {
 	glfwSetErrorCallback(_glfw_log_error_callback);
 
 	if (!glfwInit()) {
-		vt::log::fatal("[ENGINE] > Failed to initialized GLFW library");
+		vt::log::fatal("[ENGINE] > Failed to initialize GLFW library");
 		return; // [[noreturn]]
 	}
 
 	bool success = m_display.create(960, 540, "Vitae");
 	if (!success) {
-		vt::log::fatal("[ENGINE] > Failed to initialized Display");
+		vt::log::fatal("[ENGINE] > Failed to create Display");
+		return; // [[noreturn]]
+	}
+
+	success = m_render.init();
+	if (!success) {
+		vt::log::fatal("[ENGINE] > Failed to initialize Batch Renderer");
 		return; // [[noreturn]]
 	}
 }
@@ -31,7 +38,7 @@ Engine::~Engine() {
 	glfwTerminate();
 }
 
-static void _draw_rect(Display& display, f32 x, f32 y, f32 w, f32 h) {
+static void _draw_rect(RenderBatcher& render, f32 x, f32 y, f32 w, f32 h) {
 	vt::Vec3 quad[4] = {
 		vt::Vec3(0.0, 0.0, 0.0), // Top Left
 		vt::Vec3(w, 0.0, 0.0),	 // Top Right
@@ -60,28 +67,66 @@ static void _draw_rect(Display& display, f32 x, f32 y, f32 w, f32 h) {
 	vt::Transform transform;
 	transform.set_origin(vt::Vec2(w / 2, h / 2));
 	transform.translate(vt::Vec3 { x, y, 0.0 });
-	transform.rotate(glfwGetTime());
 
-	display.draw(obj, transform);
+	render.draw(obj, transform);
+}
+
+static void _draw_rect_lines(RenderBatcher& render, f32 x, f32 y, f32 w, f32 h) {
+	vt::Vec3 quad[4] = {
+		vt::Vec3(0.0, 0.0, 0.0), // Top Left
+		vt::Vec3(w, 0.0, 0.0),	 // Top Right
+		vt::Vec3(w, h, 0.0),	 // Bottom Right
+		vt::Vec3(0.0, h, 0.0),	 // Bottom Left
+	};
+
+	vt::Vec2 quad_uv[4] = {
+		vt::Vec2(0.0, 0.0), // Top Left
+		vt::Vec2(1.0, 0.0), // Top Right
+		vt::Vec2(1.0, 1.0), // Bottom Right
+		vt::Vec2(0.0, 1.0), // Bottom Left
+	};
+
+	std::vector<vt::gfx::Vertex> vertices {
+		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
+		vt::gfx::Vertex(quad[1], quad_uv[1], vt::gfx::Color::Green),
+		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
+
+		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
+		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
+		vt::gfx::Vertex(quad[3], quad_uv[3], vt::gfx::Color::White),
+	};
+
+	vt::gfx::Drawable obj { SG_PRIMITIVETYPE_LINE_STRIP, vertices };
+	vt::Transform transform;
+	transform.set_origin(vt::Vec2(w / 2, h / 2));
+	transform.translate(vt::Vec3 { x, y, 0.0 });
+
+	render.draw(obj, transform);
 }
 
 void Engine::run() {
 	while (m_is_active) {
-		m_display.begin();
-		_draw_rect(m_display, 960 / 2, 540 / 2, 128, 128);
-		_draw_rect(m_display, 480 + 128, 270 + 128, 16, 16);
-		m_display.end();
-
-		m_display.begin();
-		_draw_rect(m_display, 0, 0, 128, 128);
-
+		m_render.begin(m_display.get_pass());
 		{
-			m_display.begin();
-			_draw_rect(m_display, 0, 270, 32, 32);
-			m_display.end();
+			m_render.push_state();
+			_draw_rect(m_render, 0, 0, 128, 128);
+			m_render.pop_state();
+
+			m_render.push_state();
+			m_render.apply_viewport(480.0, 0.0, 480, 270);
+			_draw_rect_lines(m_render, 0, 0, 92, 92);
+
+			{
+				m_render.push_state();
+				_draw_rect(m_render, 0, 0, 64, 64);
+				m_render.pop_state();
+			}
+
+			m_render.apply_viewport(480.0, 0.0, 480, 270);
+			_draw_rect_lines(m_render, 0, 0, 48, 48);
+			m_render.pop_state();
 		}
-		_draw_rect(m_display, 480, 0, 16, 16);
-		m_display.end();
+		m_render.end();
 
 		m_display.present();
 		glfwPollEvents();
