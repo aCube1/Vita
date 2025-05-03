@@ -35,7 +35,7 @@ void Transform::set_position(const Vec3& position) {
 	m_update_transform = true;
 }
 
-void Transform::set_angle(f32 angle) {
+void Transform::set_rotation(f32 angle) {
 	m_rotation = angle;
 	m_update_transform = true;
 }

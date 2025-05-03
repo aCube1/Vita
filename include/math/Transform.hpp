@@ -16,7 +16,7 @@ public:
 
 	void set_origin(const Vec2& origin);
 	void set_position(const Vec3& position);
-	void set_angle(f32 angle);
+	void set_rotation(f32 angle);
 	void set_scale(const Vec2& scale);
 
 	[[nodiscard]] const Vec2& get_origin() const;
