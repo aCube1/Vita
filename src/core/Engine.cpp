@@ -100,33 +100,23 @@ static void _draw_rect_lines(RenderBatcher& render, f32 x, f32 y, f32 w, f32 h) 
 	vt::Transform transform;
 	transform.set_origin(vt::Vec2(w / 2, h / 2));
 	transform.translate(vt::Vec3 { x, y, 0.0 });
+	transform.scale(vt::Vec2 { 2.0 });
 
 	render.draw(obj, transform);
 }
 
 void Engine::run() {
+	View camera { { 480.0, 270.0 } };
+
 	while (m_is_active) {
-		m_render.begin(m_display.get_pass());
+		m_render.begin_frame(m_display.get_pass());
 		{
-			m_render.push_state();
-			_draw_rect(m_render, 0, 0, 128, 128);
-			m_render.pop_state();
-
-			m_render.push_state();
-			m_render.apply_viewport(480.0, 0.0, 480, 270);
-			_draw_rect_lines(m_render, 0, 0, 92, 92);
-
-			{
-				m_render.push_state();
-				_draw_rect(m_render, 0, 0, 64, 64);
-				m_render.pop_state();
-			}
-
-			m_render.apply_viewport(480.0, 0.0, 480, 270);
-			_draw_rect_lines(m_render, 0, 0, 48, 48);
-			m_render.pop_state();
+			m_render.begin(camera);
+			_draw_rect_lines(m_render, 480 - 64, 270 - 64, 128, 128);
+			_draw_rect(m_render, 480 - 46, 270 - 46, 92, 92);
+			m_render.end();
 		}
-		m_render.end();
+		m_render.end_frame();
 
 		m_display.present();
 		glfwPollEvents();

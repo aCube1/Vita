@@ -1,7 +1,9 @@
 #ifndef _VT_GFX_RENDERBATCHER_HPP
 #define _VT_GFX_RENDERBATCHER_HPP
 
+#include "gfx/Color.hpp"
 #include "gfx/Drawable.hpp"
+#include "gfx/View.hpp"
 #include "gfx/common.hpp"
 #include "math/Matrix.hpp"
 #include "math/Rect.hpp"
@@ -34,7 +36,7 @@ struct BatchState {
 	Rect viewport;
 	Rect scissor;
 	Matrix proj;
-	Matrix view;
+	View view;
 	sg_pipeline pipeline;
 	UniformBuffer uniform;
 
@@ -56,15 +58,18 @@ public:
 	bool init(u32 max_vertices = 0, u32 max_commands = 0);
 	void terminate();
 
-	void begin(const sg_pass& pass);
-	void end();
+	// Render pass manipulation
+	void begin_frame(const sg_pass& pass);
+	void end_frame();
 
-	void push_state();
-	void pop_state();
+	// Drawing state manipulation
+	void begin(const View& view);
+	void end();
 	void flush();
 
 	void draw(const Drawable& drawable, const Transform& transform);
 
+	// State view manipulation
 	void apply_viewport(f32 x, f32 y, f32 w, f32 h);
 	void apply_scissor(f32 x, f32 y, f32 w, f32 h);
 
@@ -119,7 +124,6 @@ private:
 	std::vector<BatchCommand> m_commands;
 	std::vector<u8> m_uniform_buffer;
 
-	std::stack<Matrix> m_transform_stack;
 	std::stack<BatchState> m_state_stack;
 
 	bool _try_merge_command(const DrawCommand& draw);

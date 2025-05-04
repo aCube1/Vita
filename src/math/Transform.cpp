@@ -66,15 +66,15 @@ void Transform::set_scale(const Vec2& scale) {
 		return m_transform;
 	}
 
-	// Transformation: T + R + S -> M
+	// Transformation: T * O * R * S * (-O) -> M
 	mat4 m = GLM_MAT4_IDENTITY_INIT;
 	glm_translate(m, (f32 *)m_position.raw);
-	glm_rotate_at(
-		m, vec3 { m_origin.x, m_origin.y, 0.0 }, m_rotation, vec3 { 0.0, 0.0, 1.0 }
-	);
+	glm_translate(m, vec3 { m_origin.x, m_origin.y, 0.0 });
+	glm_rotate_z(m, m_rotation, m);
 	glm_scale(m, vec3 { m_scale.x, m_scale.y, 1.0 });
+	glm_translate(m, vec3 { -m_origin.x, -m_origin.y, 0.0 });
 
-	m_update_transform = false;
 	m_transform = Matrix { (f32 *)m };
+	m_update_transform = false;
 	return m_transform;
 }

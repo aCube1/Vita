@@ -22,6 +22,7 @@ target_sources(
 		"src/core/Display.cpp"
 		"src/gfx/Drawable.cpp"
 		"src/gfx/RenderBatcher.cpp"
+		"src/gfx/View.cpp"
 		"src/gfx/common.cpp"
 		"src/math/Matrix.cpp"
 		"src/math/Rect.cpp"

@@ -7,8 +7,8 @@
 using namespace vt::gfx;
 
 bool RenderBatcher::init(u32 max_vertices, u32 max_commands) {
-	m_vertices.reserve(max_vertices > 0 ? max_vertices : _DEFAULT_MAX_VERTICES);
-	m_commands.reserve(max_commands > 0 ? max_commands : _DEFAULT_MAX_COMMANDS);
+	m_vertices.resize(max_vertices > 0 ? max_vertices : _DEFAULT_MAX_VERTICES);
+	m_commands.resize(max_commands > 0 ? max_commands : _DEFAULT_MAX_COMMANDS);
 
 	sg_buffer_desc bufdesc;
 	bufdesc.size = m_vertices.capacity() * sizeof(Vertex);
@@ -32,7 +32,7 @@ void RenderBatcher::terminate() {
 	}
 }
 
-void RenderBatcher::begin(const sg_pass& pass) {
+void RenderBatcher::begin_frame(const sg_pass& pass) {
 	assert(m_is_valid);
 	assert(!m_cur_pass.in_pass && "Cannot override current pass");
 
@@ -50,7 +50,7 @@ void RenderBatcher::begin(const sg_pass& pass) {
 	sg_begin_pass(pass);
 }
 
-void RenderBatcher::end() {
+void RenderBatcher::end_frame() {
 	assert(m_is_valid);
 	assert(m_cur_pass.in_pass);
 
@@ -59,10 +59,14 @@ void RenderBatcher::end() {
 
 	if (!m_state_stack.empty()) {
 		m_state_stack = std::stack<BatchState>();
+
+		m_cur_vertex = 0;
+		m_cur_command = 0;
+		m_cur_uniform = 0;
 	}
 }
 
-void RenderBatcher::push_state() {
+void RenderBatcher::begin(const View& view) {
 	assert(m_is_valid);
 	assert(m_cur_pass.in_pass);
 
@@ -75,18 +79,20 @@ void RenderBatcher::push_state() {
 	m_state_stack.push(m_state);
 
 	m_state.framesize = m_cur_pass.framesize;
-	m_state.viewport = Rect { 0.0, 0.0, m_state.framesize.w, m_state.framesize.h };
-	m_state.scissor = Rect { 0.0, 0.0, -1.0, -1.0 };
 	m_state.proj = Matrix::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
-	m_state.view = Matrix {};
+	m_state.view = view;
 	m_state.pipeline.id = SG_INVALID_ID;
 	m_state.uniform = UniformBuffer {};
 	m_state._base_vertex = m_cur_vertex;
 	m_state._base_command = m_cur_command;
 	m_state._base_uniform = m_cur_uniform;
+
+	// Reset viewport and scissor
+	apply_viewport(0.0, 0.0, m_state.framesize.w, m_state.framesize.h);
+	apply_scissor(0.0, 0.0, -1.0, -1.0);
 }
 
-void RenderBatcher::pop_state() {
+void RenderBatcher::end() {
 	assert(m_is_valid);
 	assert(m_cur_pass.in_pass);
 
@@ -247,7 +253,8 @@ void RenderBatcher::draw(const Drawable& drawable, const Transform& transform) {
 	}
 
 	const Matrix& model = transform.get_matrix();
-	Matrix mvp = m_state.proj * m_state.view * model;
+	const Matrix& view = m_state.view.get_matrix();
+	Matrix mvp = m_state.proj * view * model;
 	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (u32 i = 0; i < vertex_count; i += 1) {
 		const auto& vertex = drawable.m_vertices[i];

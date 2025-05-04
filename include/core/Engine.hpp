@@ -3,7 +3,6 @@
 
 #include "core/Display.hpp"
 #include "gfx/RenderBatcher.hpp"
-#include "types.hpp"
 
 namespace vt::core {
 

@@ -1,5 +1,6 @@
 #include "math/Matrix.hpp"
 
+#include <cglm/affine.h>
 #include <cglm/cam.h>
 
 using namespace vt;
