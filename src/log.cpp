@@ -43,7 +43,8 @@ void log::send_message(
 	// Output:
 	//    hh:mm:ss file:line [LEVEL] - message
 	std::cerr << std::format(
-		"{}{}{}[{}]\x1b[0m - {}\n", time, dbg, _log_color[level], _log_name[level], msg
+		"{}{}{}[{}]\x1b[0m - {}\n", time, dbg, _log_color[(i32)level],
+		_log_name[(i32)level], msg
 	);
 }
 

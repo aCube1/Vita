@@ -11,7 +11,7 @@
 // creating the logging system
 namespace vt::log {
 
-enum Level : u8 {
+enum class Level : u8 {
 	Debug,
 	Info,
 	Warn,

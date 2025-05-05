@@ -12,7 +12,7 @@ namespace vt::gfx {
 
 constexpr u32 MAX_TEXTURES_SLOTS = SG_MAX_IMAGE_SAMPLER_PAIRS;
 
-enum VertexAttr : u8 {
+enum class VertexAttr : u8 {
 	Pos = 0,
 	UV = 1,
 	Color = 2,

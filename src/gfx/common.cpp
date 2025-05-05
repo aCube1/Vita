@@ -45,17 +45,17 @@ sg_pipeline_desc gfx::init_pipeline_desc(sg_primitive_type primitive, sg_shader 
 	sg_pipeline_desc desc;
 	desc.shader = shdr;
 	desc.layout.buffers[0].stride = sizeof(gfx::Vertex);
-	desc.layout.attrs[gfx::VertexAttr::Pos] = {
+	desc.layout.attrs[(i32)gfx::VertexAttr::Pos] = {
 		.buffer_index = 0,
 		.offset = offsetof(gfx::Vertex, position),
 		.format = SG_VERTEXFORMAT_FLOAT3,
 	};
-	desc.layout.attrs[gfx::VertexAttr::UV] = {
+	desc.layout.attrs[(i32)gfx::VertexAttr::UV] = {
 		.buffer_index = 0,
 		.offset = offsetof(gfx::Vertex, texcoord),
 		.format = SG_VERTEXFORMAT_FLOAT2,
 	};
-	desc.layout.attrs[gfx::VertexAttr::Color] = {
+	desc.layout.attrs[(i32)gfx::VertexAttr::Color] = {
 		.buffer_index = 0,
 		.offset = offsetof(gfx::Vertex, color),
 		.format = SG_VERTEXFORMAT_UBYTE4N,
@@ -95,9 +95,9 @@ sg_shader gfx::make_common_shader() {
 	desc.vertex_func.entry = "main";
 	desc.fragment_func.source = _common_fs_source;
 	desc.fragment_func.entry = "main";
-	desc.attrs[gfx::VertexAttr::Pos].glsl_name = "a_pos";
-	desc.attrs[gfx::VertexAttr::UV].glsl_name = "a_uv";
-	desc.attrs[gfx::VertexAttr::Color].glsl_name = "a_color";
+	desc.attrs[(i32)gfx::VertexAttr::Pos].glsl_name = "a_pos";
+	desc.attrs[(i32)gfx::VertexAttr::UV].glsl_name = "a_uv";
+	desc.attrs[(i32)gfx::VertexAttr::Color].glsl_name = "a_color";
 	desc.images[0].stage = SG_SHADERSTAGE_FRAGMENT;
 	desc.images[0].image_type = SG_IMAGETYPE_2D;
 	desc.images[0].sample_type = SG_IMAGESAMPLETYPE_FLOAT;
