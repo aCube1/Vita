@@ -7,8 +7,6 @@
 #include <source_location>
 #include <string_view>
 
-// NOTE: It's probably better to use spdlog instead of manually
-// creating the logging system
 namespace vt::log {
 
 enum class Level : u8 {

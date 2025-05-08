@@ -38,82 +38,29 @@ Engine::~Engine() {
 	glfwTerminate();
 }
 
-static void _draw_rect(RenderBatcher& render, f32 x, f32 y, f32 w, f32 h) {
-	vt::Vec3 quad[4] = {
-		vt::Vec3(0.0, 0.0, 0.0), // Top Left
-		vt::Vec3(w, 0.0, 0.0),	 // Top Right
-		vt::Vec3(w, h, 0.0),	 // Bottom Right
-		vt::Vec3(0.0, h, 0.0),	 // Bottom Left
-	};
-
-	vt::Vec2 quad_uv[4] = {
-		vt::Vec2(0.0, 0.0), // Top Left
-		vt::Vec2(1.0, 0.0), // Top Right
-		vt::Vec2(1.0, 1.0), // Bottom Right
-		vt::Vec2(0.0, 1.0), // Bottom Left
-	};
-
-	std::vector<vt::gfx::Vertex> vertices {
-		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
-		vt::gfx::Vertex(quad[1], quad_uv[1], vt::gfx::Color::Green),
-		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
-
-		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
-		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
-		vt::gfx::Vertex(quad[3], quad_uv[3], vt::gfx::Color::White),
-	};
-
-	vt::gfx::Drawable obj { SG_PRIMITIVETYPE_TRIANGLES, vertices };
-	vt::Transform transform;
-	transform.set_origin(vt::Vec2(w / 2, h / 2));
-	transform.translate(vt::Vec3 { x, y, 0.0 });
-
-	render.draw(obj, transform);
-}
-
-static void _draw_rect_lines(RenderBatcher& render, f32 x, f32 y, f32 w, f32 h) {
-	vt::Vec3 quad[4] = {
-		vt::Vec3(0.0, 0.0, 0.0), // Top Left
-		vt::Vec3(w, 0.0, 0.0),	 // Top Right
-		vt::Vec3(w, h, 0.0),	 // Bottom Right
-		vt::Vec3(0.0, h, 0.0),	 // Bottom Left
-	};
-
-	vt::Vec2 quad_uv[4] = {
-		vt::Vec2(0.0, 0.0), // Top Left
-		vt::Vec2(1.0, 0.0), // Top Right
-		vt::Vec2(1.0, 1.0), // Bottom Right
-		vt::Vec2(0.0, 1.0), // Bottom Left
-	};
-
-	std::vector<vt::gfx::Vertex> vertices {
-		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
-		vt::gfx::Vertex(quad[1], quad_uv[1], vt::gfx::Color::Green),
-		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
-
-		vt::gfx::Vertex(quad[0], quad_uv[0], vt::gfx::Color::Red),
-		vt::gfx::Vertex(quad[2], quad_uv[2], vt::gfx::Color::Blue),
-		vt::gfx::Vertex(quad[3], quad_uv[3], vt::gfx::Color::White),
-	};
-
-	vt::gfx::Drawable obj { SG_PRIMITIVETYPE_LINE_STRIP, vertices };
-	vt::Transform transform;
-	transform.set_origin(vt::Vec2(w / 2, h / 2));
-	transform.translate(vt::Vec3 { x, y, 0.0 });
-	transform.scale(vt::Vec2 { 2.0 });
-
-	render.draw(obj, transform);
-}
-
 void Engine::run() {
 	View camera { { 480.0, 270.0 } };
 
 	while (m_is_active) {
 		m_render.begin_frame(m_display.get_pass());
 		{
+			Drawable rect;
+
 			m_render.begin(camera);
-			_draw_rect_lines(m_render, 480 - 64, 270 - 64, 128, 128);
-			_draw_rect(m_render, 480 - 46, 270 - 46, 92, 92);
+
+			rect = Drawable::make_rect(
+				DrawMode::ModeFill, 480 - 32, 270 - 32, 64, 64, Color::Blue
+			);
+			rect.set_rotation(glfwGetTime());
+			m_render.draw(rect);
+
+			rect = Drawable::make_rect(
+				DrawMode::ModeLines, 480 - 46, 270 - 46, 92, 92, Color::Green
+			);
+			rect.set_rotation(glfwGetTime() * -1.0);
+			rect.scale({ 2.0 });
+			m_render.draw(rect);
+
 			m_render.end();
 		}
 		m_render.end_frame();

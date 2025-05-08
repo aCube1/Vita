@@ -236,7 +236,7 @@ void RenderBatcher::flush() {
 	}
 }
 
-void RenderBatcher::draw(const Drawable& drawable, const Transform& transform) {
+void RenderBatcher::draw(const Drawable& drawable) {
 	assert(m_is_valid);
 	assert(m_cur_pass.in_pass);
 	assert(!m_state_stack.empty());
@@ -252,10 +252,12 @@ void RenderBatcher::draw(const Drawable& drawable, const Transform& transform) {
 		return;
 	}
 
-	const Matrix& model = transform.get_matrix();
+	const Matrix& model = drawable.get_matrix();
 	const Matrix& view = m_state.view.get_matrix();
 	Matrix mvp = m_state.proj * view * model;
+
 	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
+
 	for (u32 i = 0; i < vertex_count; i += 1) {
 		const auto& vertex = drawable.m_vertices[i];
 

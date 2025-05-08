@@ -67,7 +67,7 @@ public:
 	void end();
 	void flush();
 
-	void draw(const Drawable& drawable, const Transform& transform);
+	void draw(const Drawable& drawable);
 
 	// State view manipulation
 	void apply_viewport(f32 x, f32 y, f32 w, f32 h);
