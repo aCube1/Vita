@@ -2,74 +2,144 @@
 
 #include "log.hpp"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_timer.h>
+
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
 
 using namespace vt::core;
 using namespace vt::gfx;
 
-static void _glfw_log_error_callback(i32 err, const char *msg) {
-	vt::log::error("[ENGINE] | GLFW {} > {}", err, msg);
+static Engine *s_engine { nullptr };
+
+bool Engine::init() noexcept {
+	assert(!s_engine);
+
+	s_engine = new (std::nothrow) Engine;
+	if (!s_engine) {
+		return false;
+	}
+
+	return true;
+}
+
+void Engine::quit() {
+	delete s_engine;
+	s_engine = nullptr;
+}
+
+Engine& Engine::get() {
+	assert(s_engine);
+	return *s_engine;
 }
 
 Engine::Engine() {
-	glfwSetErrorCallback(_glfw_log_error_callback);
-
-	if (!glfwInit()) {
-		vt::log::fatal("[ENGINE] > Failed to initialize GLFW library");
-		return; // [[noreturn]]
+	if (!SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO)) {
+		vt::log::fatal("[ENGINE] > Failed to initialize Events and Video subsystems");
+		return;
 	}
 
-	bool success = m_display.create(960, 540, "Vitae");
+	bool success = m_window.create(960, 540, "Vitae");
 	if (!success) {
 		vt::log::fatal("[ENGINE] > Failed to create Display");
 		return; // [[noreturn]]
 	}
 
-	success = m_render.init();
-	if (!success) {
+	if (!_init_graphics_driver()) {
+		vt::log::fatal("[ENGINE] > Failed to initialize Graphics Driver");
+		return; // [[noreturn]]
+	}
+
+	if (!m_render.init()) {
 		vt::log::fatal("[ENGINE] > Failed to initialize Batch Renderer");
 		return; // [[noreturn]]
 	}
+
+	m_is_running = true;
 }
 
 Engine::~Engine() {
-	m_display.close();
-	glfwTerminate();
+	m_render.terminate();
+	_terminate_graphics_driver();
+	m_window.close();
+
+	SDL_Quit();
 }
 
-void Engine::run() {
-	View camera { { 480.0, 270.0 } };
+void Engine::run_loop() {
+	while (m_is_running) {
+		_do_update();
 
-	while (m_is_active) {
-		m_render.begin_frame(m_display.get_pass());
-		{
-			Drawable rect;
-
-			m_render.begin(camera);
-
-			rect = Drawable::make_rect(
-				DrawMode::ModeFill, 480 - 32, 270 - 32, 64, 64, Color::Blue
-			);
-			rect.set_rotation(glfwGetTime());
-			m_render.draw(rect);
-
-			rect = Drawable::make_rect(
-				DrawMode::ModeLines, 480 - 46, 270 - 46, 92, 92, Color::Green
-			);
-			rect.set_rotation(glfwGetTime() * -1.0);
-			rect.scale({ 2.0 });
-			m_render.draw(rect);
-
-			m_render.end();
-		}
-		m_render.end_frame();
-
-		m_display.present();
-		glfwPollEvents();
-
-		if (!m_display.is_open()) {
-			m_is_active = false;
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_EVENT_QUIT) {
+				m_is_running = false;
+			}
 		}
 	}
+}
+
+void Engine::_do_update() {
+	View camera { { 480.0, 270.0 } };
+
+	m_render.begin_frame(m_window.get_pass());
+	{
+		Drawable rect;
+
+		m_render.begin(camera);
+
+		rect = Drawable::make_rect(
+			DrawMode::ModeFill, 480 - 32, 270 - 32, 64, 64, Color::Blue
+		);
+		rect.set_rotation(SDL_GetTicks() / 360.0);
+		m_render.draw(rect);
+
+		rect = Drawable::make_rect(
+			DrawMode::ModeLines, 480 - 46, 270 - 46, 92, 92, Color::Green
+		);
+		rect.set_rotation((SDL_GetTicks() / 360.0) * -1.0);
+		rect.scale({ 2.0 });
+		m_render.draw(rect);
+
+		m_render.end();
+	}
+	m_render.end_frame();
+	m_window.present();
+}
+
+bool Engine::_init_graphics_driver() {
+	i32 version = gladLoadGL(SDL_GL_GetProcAddress);
+	if (version == 0) {
+		vt::log::error("[GFX] | GL > Failed to initialize OpenGL context");
+		return false;
+	}
+	vt::log::info(
+		"[GFX] | GL > Loaded version: {}.{}", GLAD_VERSION_MAJOR(version),
+		GLAD_VERSION_MINOR(version)
+	);
+
+	const auto& context_settings = m_window.get_context_settings();
+	sg_desc desc {};
+	desc.environment.defaults = {
+		.color_format = context_settings.pixel_format,
+		.depth_format = context_settings.depth_format,
+		.sample_count = context_settings.samples,
+	};
+#if !defined(NDEBUG)
+	desc.logger.func = vt::log::slog_callback;
+#endif
+
+	sg_setup(desc);
+	if (!sg_isvalid()) {
+		vt::log::error("[GFX] | Renderer > Failed to setup Sokol");
+		return false;
+	}
+
+	return true;
+}
+
+void Engine::_terminate_graphics_driver() {
+	sg_shutdown();
 }

@@ -43,8 +43,10 @@ struct [[nodiscard]] Vec2 {
 	};
 
 	Vec2() = default;
-	Vec2(f32 fill) : x { fill }, y { fill } { }
-	Vec2(f32 x_, f32 y_) : x { x_ }, y { y_ } { }
+	Vec2(f32 fill)
+		: x { fill }, y { fill } { }
+	Vec2(f32 x_, f32 y_)
+		: x { x_ }, y { y_ } { }
 
 	Vec2(const f32 *v) {
 		raw[0] = v[0];
@@ -100,8 +102,6 @@ struct [[nodiscard]] Vec2 {
 	template <AsNumeric T>
 	constexpr Vec2& operator/=(T scalar);
 };
-
-using Point = Vec2;
 
 } // namespace vt
 

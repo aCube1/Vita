@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.24)
 project(
 	vitae
 	VERSION 0.1.0
@@ -19,7 +19,7 @@ target_compile_features(
 target_sources(
 	${PROJECT_NAME} PRIVATE
 		"src/core/Engine.cpp"
-		"src/core/Display.cpp"
+		"src/core/Window.cpp"
 		"src/gfx/Drawable.cpp"
 		"src/gfx/RenderBatcher.cpp"
 		"src/gfx/View.cpp"
@@ -28,6 +28,7 @@ target_sources(
 		"src/math/Rect.cpp"
 		"src/math/Transform.cpp"
 		"src/math/Vec2.cpp"
+		"src/math/Vec2i.cpp"
 		"src/math/Vec3.cpp"
 		"src/log.cpp"
 		"src/main.cpp"

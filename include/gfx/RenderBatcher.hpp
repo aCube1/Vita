@@ -7,8 +7,7 @@
 #include "gfx/common.hpp"
 #include "math/Matrix.hpp"
 #include "math/Rect.hpp"
-#include "math/Transform.hpp"
-#include "math/Vec2.hpp"
+#include "math/Vec2i.hpp"
 
 #include <sokol/sokol_gfx.h>
 #include <span>
@@ -18,16 +17,11 @@
 namespace vt::gfx {
 
 struct UniformBuffer {
-	static constexpr i32 VERTEX_SLOT = 0;
-	static constexpr i32 FRAGMENT_SLOT = 1;
-
 	u32 offset;
-	u16 vs_size;
-	u16 fs_size;
+	u16 size;
 
 	constexpr bool operator==(const UniformBuffer& other) const {
-		return offset == other.offset && vs_size == other.vs_size
-			&& fs_size == other.fs_size;
+		return offset == other.offset && size == other.size;
 	}
 };
 
@@ -68,6 +62,9 @@ public:
 	void flush();
 
 	void draw(const Drawable& drawable);
+
+	void set_pipeline(sg_pipeline pip);
+	void set_uniform(i32 bindslot, const void *data, usize size);
 
 	// State view manipulation
 	void apply_viewport(f32 x, f32 y, f32 w, f32 h);

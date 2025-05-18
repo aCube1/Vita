@@ -139,8 +139,7 @@ void RenderBatcher::flush() {
 	sg_image cur_images[MAX_TEXTURES_SLOTS] = {};
 	UniformBuffer cur_uniform_buffer {
 		.offset = 0,
-		.vs_size = 0,
-		.fs_size = 0,
+		.size = 0,
 	};
 
 	sg_bindings binds {};
@@ -209,22 +208,12 @@ void RenderBatcher::flush() {
 				const auto& uniform = draw.uniform;
 
 				// Vertex uniform
-				if (draw.uniform.vs_size > 0) {
+				if (draw.uniform.size > 0) {
 					sg_range range = {
 						.ptr = m_uniform_buffer.data() + uniform.offset,
-						.size = uniform.vs_size,
+						.size = uniform.size,
 					};
-					sg_apply_uniforms(UniformBuffer::VERTEX_SLOT, range);
-				}
-
-				// Fragment uniform
-				if (draw.uniform.fs_size > 0) {
-					sg_range range = {
-						.ptr = &m_uniform_buffer[uniform.offset + uniform.vs_size],
-						.size = uniform.fs_size,
-					};
-
-					sg_apply_uniforms(UniformBuffer::FRAGMENT_SLOT, range);
+					sg_apply_uniforms(0, range);
 				}
 			}
 
@@ -375,7 +364,7 @@ void RenderBatcher::apply_scissor(f32 x, f32 y, f32 w, f32 h) {
 
 	// Reset scissor if invalid
 	if (w < 0.0 && h < 0.0) {
-		scissor = Rect { 0.0, 0.0, m_state.framesize.w, m_state.framesize.h };
+		scissor = Rect { 0.0, 0.0, (f32)m_state.framesize.w, (f32)m_state.framesize.h };
 	}
 
 	std::memset(cmd, 0, sizeof(BatchCommand));

@@ -26,22 +26,22 @@ Vec2 Vec2::clamp(f32 min, f32 max) const {
 }
 
 f32 Vec2::cross(const Vec2& other) const {
-	vec2& a = const_cast<vec2&>(raw);
-	vec2& b = const_cast<vec2&>(other.raw);
+	auto& a = const_cast<vec2&>(raw);
+	auto& b = const_cast<vec2&>(other.raw);
 
 	return glm_vec2_cross(a, b);
 }
 
 f32 Vec2::distance_to(const Vec2& other) const {
-	vec2& a = const_cast<vec2&>(raw);
-	vec2& b = const_cast<vec2&>(other.raw);
+	auto& a = const_cast<vec2&>(raw);
+	auto& b = const_cast<vec2&>(other.raw);
 
 	return glm_vec2_distance(a, b);
 }
 
 f32 Vec2::dot(const Vec2& other) const {
-	vec2& a = const_cast<vec2&>(raw);
-	vec2& b = const_cast<vec2&>(other.raw);
+	auto& a = const_cast<vec2&>(raw);
+	auto& b = const_cast<vec2&>(other.raw);
 
 	return glm_vec2_dot(a, b);
 }
@@ -51,10 +51,13 @@ f32 Vec2::lenght() const {
 }
 
 Vec2 Vec2::lerp(const Vec2& to, f32 weight) const {
-	Vec2 s { std::clamp<f32>(weight, 0.0, 1.0) };
+	auto& from = const_cast<vec2&>(raw);
+	auto& to_ = const_cast<vec2&>(to.raw);
 
-	// from + s * (to * from)
-	return (*this) + s * (to * (*this));
+	vec2 out;
+	glm_vec2_lerp(from, to_, weight, out);
+
+	return out;
 }
 
 Vec2 Vec2::max(const Vec2& other) const {

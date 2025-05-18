@@ -1,14 +1,17 @@
 #include "core/Engine.hpp"
-#include "utils.hpp"
 
-#include <cstdlib>
+using vt::core::Engine;
 
 int main(int argc, char *argv[]) {
 	VT_UNUSED(argc);
 	VT_UNUSED(argv);
 
-	auto engine = vt::core::Engine();
-	engine.run();
+	if (!Engine::init()) {
+		return EXIT_FAILURE;
+	}
+
+	auto& engine = Engine::get();
+	engine.run_loop();
 
 	return EXIT_SUCCESS;
 }

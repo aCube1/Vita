@@ -1,8 +1,9 @@
 #ifndef _VT_GFX_COLOR_HPP
 #define _VT_GFX_COLOR_HPP
 
-#include "sokol/sokol_gfx.h"
 #include "types.hpp"
+
+#include <sokol/sokol_gfx.h>
 
 #ifdef VT_COMPILER_CLANG
 #	pragma clang diagnostic push
