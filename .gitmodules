@@ -1,3 +1,15 @@
 [submodule "ext/cglm"]
 	path = ext/cglm
 	url = git@github.com:recp/cglm.git
+[submodule "ext/tint"]
+	path = ext/tint
+	url = git@git.sr.ht:~acube/tint-extract
+[submodule "ext/SPIRV-Cross"]
+	path = ext/SPIRV-Cross
+	url = git@github.com:KhronosGroup/SPIRV-Cross.git
+[submodule "ext/SPIRV-Headers"]
+	path = ext/SPIRV-Headers
+	url = git@github.com:KhronosGroup/SPIRV-Headers.git
+[submodule "ext/SPIRV-Tools"]
+	path = ext/SPIRV-Tools
+	url = git@github.com:KhronosGroup/SPIRV-Tools.git
