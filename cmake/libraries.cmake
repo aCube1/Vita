@@ -17,33 +17,15 @@ function(setup_libraries target)
 	)
 	FetchContent_MakeAvailable(SDL3)
 
-	option(SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS "" ON)
-	option(SPIRV_CROSS_CLI "" OFF)
-	option(SPIRV_CROSS_ENABLE_TESTS "" OFF)
-	option(SPIRV_CROSS_ENABLE_GLSL "" ON)
-	option(SPIRV_CROSS_ENABLE_HLSL "" OFF)
-	option(SPIRV_CROSS_ENABLE_MSL "" OFF)
-	option(SPIRV_CROSS_ENABLE_C_API "" OFF)
-	option(SPIRV_CROSS_ENABLE_UTIL "" OFF)
-	option(SPIRV_CROSS_SKIP_INSTALL "" ON)
-	option(SPIRV_SKIP_EXECUTABLES "" ON)
-
-	add_subdirectory(${_LIBS_DIR}/SPIRV-Cross)
-	add_subdirectory(${_LIBS_DIR}/SPIRV-Headers)
-	add_subdirectory(${_LIBS_DIR}/SPIRV-Tools)
-	add_subdirectory(${_LIBS_DIR}/tint)
-
 	target_include_directories(
 		${target} PRIVATE
-			${_LIBS_DIR}
-			${_LIBS_DIR}/cglm/include
+			"${_LIBS_DIR}"
+			"${_LIBS_DIR}/cglm/include"
 	)
 
 	target_link_libraries(
 		${target}
 		PRIVATE
-			spirv-cross-cpp
-			SPIRV-Tools
 			SDL3::SDL3
 	)
 
