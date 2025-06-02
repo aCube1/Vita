@@ -3,6 +3,7 @@
 
 #include "types.hpp"
 
+#include <cassert>
 #include <format>
 #include <source_location>
 #include <string_view>
@@ -23,7 +24,7 @@ struct FormatWithLocation {
 	u32 line;
 
 	template <typename String>
-	FormatWithLocation(
+	constexpr FormatWithLocation(
 		const String& fmt,
 		const std::source_location& loc = std::source_location::current()
 	)
@@ -31,39 +32,39 @@ struct FormatWithLocation {
 };
 
 template <typename... Args>
-inline void debug(FormatWithLocation fmt, Args&&...args) {
+constexpr void debug(FormatWithLocation fmt, Args&&...args) {
 	send_message(
 		Level::Debug, fmt.file, fmt.line, fmt.fmt, std::make_format_args(args...)
 	);
 }
 
 template <typename... Args>
-inline void info(FormatWithLocation fmt, Args&&...args) {
+constexpr void info(FormatWithLocation fmt, Args&&...args) {
 	send_message(
 		Level::Info, fmt.file, fmt.line, fmt.fmt, std::make_format_args(args...)
 	);
 }
 
 template <typename... Args>
-inline void warn(FormatWithLocation fmt, Args&&...args) {
+constexpr void warn(FormatWithLocation fmt, Args&&...args) {
 	send_message(
 		Level::Warn, fmt.file, fmt.line, fmt.fmt, std::make_format_args(args...)
 	);
 }
 
 template <typename... Args>
-inline void error(FormatWithLocation fmt, Args&&...args) {
+constexpr void error(FormatWithLocation fmt, Args&&...args) {
 	send_message(
 		Level::Error, fmt.file, fmt.line, fmt.fmt, std::make_format_args(args...)
 	);
 }
 
 template <typename... Args>
-[[noreturn]] inline void fatal(FormatWithLocation fmt, Args&&...args) {
+[[noreturn]] constexpr void fatal(FormatWithLocation fmt, Args&&...args) {
 	send_message(
 		Level::Fatal, fmt.file, fmt.line, fmt.fmt, std::make_format_args(args...)
 	);
-	std::abort();
+	assert(false);
 }
 
 void send_message(
