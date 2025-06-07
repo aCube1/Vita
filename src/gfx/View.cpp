@@ -2,7 +2,6 @@
 
 #include <cglm/affine.h>
 
-using namespace vt::gfx;
 using namespace vt;
 
 View& View::translate(const Vec2& offset) {

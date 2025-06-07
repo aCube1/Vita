@@ -14,7 +14,7 @@
 #include <stack>
 #include <vector>
 
-namespace vt::gfx {
+namespace vt {
 
 struct UniformBuffer {
 	u32 offset;
@@ -130,6 +130,6 @@ private:
 	BatchCommand *_prev_command(u32 depth);
 };
 
-} // namespace vt::gfx
+} // namespace vt
 
 #endif

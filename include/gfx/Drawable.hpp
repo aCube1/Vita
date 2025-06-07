@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-namespace vt::gfx {
+namespace vt {
 
 enum class DrawMode : u8 {
 	ModeFill = 0,
@@ -39,6 +39,6 @@ private:
 	friend class RenderBatcher;
 };
 
-} // namespace vt::gfx
+} // namespace vt
 
 #endif

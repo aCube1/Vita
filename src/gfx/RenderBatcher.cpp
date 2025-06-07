@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-using namespace vt::gfx;
+using namespace vt;
 
 bool RenderBatcher::init(u32 max_vertices, u32 max_commands) {
 	m_vertices.resize(max_vertices > 0 ? max_vertices : _DEFAULT_MAX_VERTICES);
@@ -273,7 +273,7 @@ void RenderBatcher::draw(const Drawable& drawable) {
 		draw.pipeline = m_state.pipeline;
 		draw.uniform = m_state.uniform;
 	} else {
-		draw.pipeline = vt::gfx::make_pipeline(drawable.m_primitive);
+		draw.pipeline = vt::make_pipeline(drawable.m_primitive);
 		draw.uniform = UniformBuffer {};
 	}
 

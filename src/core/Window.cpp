@@ -5,7 +5,7 @@
 #include <cstring>
 #include <string>
 
-using namespace vt::core;
+using namespace vt;
 
 bool Window::create(i32 width, i32 height, const std::string& title) {
 	if (m_handle) {

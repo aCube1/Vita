@@ -8,7 +8,7 @@
 #include <array>
 #include <sokol/sokol_gfx.h>
 
-namespace vt::gfx {
+namespace vt {
 
 constexpr u32 MAX_TEXTURES_SLOTS = SG_MAX_IMAGE_SAMPLER_PAIRS;
 
@@ -41,6 +41,6 @@ sg_pipeline make_pipeline(sg_primitive_type primitive);
 sg_shader make_common_shader();
 Texture make_common_texture();
 
-} // namespace vt::gfx
+} // namespace vt
 
 #endif

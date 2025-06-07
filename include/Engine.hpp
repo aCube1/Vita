@@ -1,12 +1,10 @@
-#ifndef _VT_CORE_ENGINE_HPP
-#define _VT_CORE_ENGINE_HPP
+#ifndef _VT_ENGINE_HPP
+#define _VT_ENGINE_HPP
 
 #include "core/Window.hpp"
 #include "gfx/RenderBatcher.hpp"
 
-union SDL_Event;
-
-namespace vt::core {
+namespace vt {
 
 class Engine final {
 public:
@@ -24,7 +22,7 @@ public:
 
 private:
 	Window m_window;
-	gfx::RenderBatcher m_render;
+	RenderBatcher m_render;
 	bool m_is_running {};
 
 	void _do_update();
@@ -33,6 +31,6 @@ private:
 	void _terminate_graphics_driver();
 };
 
-} // namespace vt::core
+} // namespace vt
 
 #endif

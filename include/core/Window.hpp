@@ -7,7 +7,7 @@
 #include <SDL3/SDL_video.h>
 #include <string>
 
-namespace vt::core {
+namespace vt {
 
 struct ContextSettings {
 	u32 version_major;
@@ -40,6 +40,6 @@ private:
 	sg_pass m_pass;
 };
 
-} // namespace vt::core
+} // namespace vt
 
 #endif

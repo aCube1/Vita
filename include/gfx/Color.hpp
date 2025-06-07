@@ -11,7 +11,7 @@
 #	pragma clang diagnostic ignored "-Wnested-anon-types"
 #endif
 
-namespace vt::gfx {
+namespace vt {
 
 struct [[nodiscard]] Color {
 	static const Color Black; // RGBA: 0x00'00'00'ff
@@ -54,6 +54,6 @@ inline const Color Color::Red { 255, 0, 0 };
 inline const Color Color::Green { 0, 255, 0 };
 inline const Color Color::Blue { 0, 0, 255 };
 
-} // namespace vt::gfx
+} // namespace vt
 
 #endif

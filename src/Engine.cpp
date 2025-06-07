@@ -1,4 +1,4 @@
-#include "core/Engine.hpp"
+#include "Engine.hpp"
 
 #include "log.hpp"
 
@@ -9,8 +9,7 @@
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 
-using namespace vt::core;
-using namespace vt::gfx;
+using namespace vt;
 
 static Engine *s_engine { nullptr };
 
@@ -38,12 +37,11 @@ Engine& Engine::get() {
 Engine::Engine() {
 	if (!SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO)) {
 		vt::log::fatal("[ENGINE] > Failed to initialize Events and Video subsystems");
-		return;
+		return; // [[noreturn]]
 	}
 
-	bool success = m_window.create(960, 540, "Vitae");
-	if (!success) {
-		vt::log::fatal("[ENGINE] > Failed to create Display");
+	if (!m_window.create(960, 540, "Vitae")) {
+		vt::log::fatal("[ENGINE] > Failed to create Window");
 		return; // [[noreturn]]
 	}
 
@@ -82,30 +80,6 @@ void Engine::run_loop() {
 }
 
 void Engine::_do_update() {
-	View camera { { 480.0, 270.0 } };
-
-	m_render.begin_frame(m_window.get_pass());
-	{
-		Drawable rect;
-
-		m_render.begin(camera);
-
-		rect = Drawable::make_rect(
-			DrawMode::ModeFill, 480 - 32, 270 - 32, 64, 64, Color::Blue
-		);
-		rect.set_rotation(SDL_GetTicks() / 360.0);
-		m_render.draw(rect);
-
-		rect = Drawable::make_rect(
-			DrawMode::ModeLines, 480 - 46, 270 - 46, 92, 92, Color::Green
-		);
-		rect.set_rotation((SDL_GetTicks() / 360.0) * -1.0);
-		rect.scale({ 2.0 });
-		m_render.draw(rect);
-
-		m_render.end();
-	}
-	m_render.end_frame();
 	m_window.present();
 }
 

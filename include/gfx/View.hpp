@@ -4,7 +4,7 @@
 #include "math/Matrix.hpp"
 #include "math/Vec2.hpp"
 
-namespace vt::gfx {
+namespace vt {
 
 class View {
 public:
@@ -35,6 +35,6 @@ private:
 	mutable bool m_update_transform { true };
 };
 
-} // namespace vt::gfx
+} // namespace vt
 
 #endif

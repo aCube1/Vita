@@ -18,7 +18,6 @@ target_compile_features(
 
 target_sources(
 	${PROJECT_NAME} PRIVATE
-		"src/core/Engine.cpp"
 		"src/core/Window.cpp"
 		"src/gfx/Drawable.cpp"
 		"src/gfx/RenderBatcher.cpp"
@@ -30,6 +29,7 @@ target_sources(
 		"src/math/Vec2.cpp"
 		"src/math/Vec2i.cpp"
 		"src/math/Vec3.cpp"
+		"src/Engine.cpp"
 		"src/log.cpp"
 		"src/main.cpp"
 )
