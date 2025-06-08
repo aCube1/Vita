@@ -1,6 +1,7 @@
 #ifndef _VT_MATH_VEC2I_HPP
 #define _VT_MATH_VEC2I_HPP
 
+#include "math/Vec2.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 
@@ -43,8 +44,12 @@ struct [[nodiscard]] Vec2i {
 	};
 
 	Vec2i() = default;
+	Vec2i(const Vec2& vec)
+		: x { static_cast<i32>(vec.x) }, y { static_cast<i32>(vec.y) } { };
+
 	Vec2i(i32 fill)
 		: x { fill }, y { fill } { }
+
 	Vec2i(i32 x_, i32 y_)
 		: x { x_ }, y { y_ } { }
 

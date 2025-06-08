@@ -9,7 +9,7 @@ function(setup_libraries target)
 	# Find and link libraries
 	FetchContent_Declare(
 		SDL3
-		GIT_REPOSITORY "https://github.com/libsdl-org/SDL"
+		GIT_REPOSITORY "git@github.com:libsdl-org/SDL.git"
 		GIT_TAG "release-3.2.14"
 		GIT_PROGRESS TRUE
 
@@ -18,7 +18,8 @@ function(setup_libraries target)
 	FetchContent_MakeAvailable(SDL3)
 
 	target_include_directories(
-		${target} PRIVATE
+		${target}
+		PRIVATE
 			"${_LIBS_DIR}"
 			"${_LIBS_DIR}/cglm/include"
 	)

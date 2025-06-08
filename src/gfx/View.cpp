@@ -52,7 +52,7 @@ void View::set_zoom(f32 scale) {
 	return m_zoom;
 }
 
-[[nodiscard]] const Matrix& View::get_matrix() const {
+[[nodiscard]] const Matrix& View::get_transform() const {
 	if (!m_update_transform) {
 		return m_transform;
 	}

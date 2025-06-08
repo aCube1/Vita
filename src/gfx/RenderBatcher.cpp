@@ -1,5 +1,7 @@
 #include "gfx/RenderBatcher.hpp"
 
+#include "core/Window.hpp"
+#include "gfx/Drawable.hpp"
 #include "log.hpp"
 
 #include <cstring>
@@ -32,102 +34,210 @@ void RenderBatcher::terminate() {
 	}
 }
 
-void RenderBatcher::begin_frame(const sg_pass& pass) {
+void RenderBatcher::draw(const Drawable& drawable) {
 	assert(m_is_valid);
-	assert(!m_cur_pass.in_pass && "Cannot override current pass");
 
-	// Query framesize
-	if (pass.attachments.id != SG_INVALID_ID) {
-		auto attachments = sg_query_attachments_desc(pass.attachments);
-		m_cur_pass.framesize.w = sg_query_image_width(attachments.colors[0].image);
-		m_cur_pass.framesize.h = sg_query_image_height(attachments.colors[0].image);
+	if (drawable.m_vertices.empty()) {
+		return;
+	}
+
+	u32 vertex_idx = m_cur_vertex;
+	u32 vertex_count = drawable.m_vertices.size();
+	auto vertices = _get_vertices(vertex_count);
+	if (vertices.empty()) {
+		return;
+	}
+
+	const Matrix& model = drawable.get_matrix();
+	const Matrix& view = m_state.view.get_transform();
+	Matrix mvp = m_state.proj * view * model;
+
+	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+	for (u32 i = 0; i < vertex_count; i += 1) {
+		const auto& vertex = drawable.m_vertices[i];
+
+		Vec3 position = mvp * vertex.position;
+		vertices[i].position = position;
+		vertices[i].color = vertex.color;
+		vertices[i].texcoord = vertex.texcoord;
+
+		// Update region area the rendering takes
+		region.x1 = std::min(region.x1, vertices[i].position.x);
+		region.y1 = std::min(region.y1, vertices[i].position.y);
+		region.x2 = std::max(region.x2, vertices[i].position.x);
+		region.y2 = std::max(region.y2, vertices[i].position.y);
+	}
+
+	DrawCommand draw;
+	draw.region = region;
+	draw.textures = drawable.m_textures;
+	draw.vertex_idx = vertex_idx;
+	draw.vertex_count = vertex_count;
+
+	// Override pipeline if state has set one
+	if (m_state.pipeline.id != SG_INVALID_ID) {
+		draw.pipeline = m_state.pipeline;
+		draw.uniform = m_state.uniform;
 	} else {
-		m_cur_pass.framesize.w = pass.swapchain.width;
-		m_cur_pass.framesize.h = pass.swapchain.height;
+		draw.pipeline = vt::make_pipeline(drawable.m_primitive);
+		draw.uniform = UniformBuffer {};
 	}
 
-	m_cur_pass.in_pass = true;
-	sg_begin_pass(pass);
+	if (sg_query_pipeline_state(draw.pipeline) != SG_RESOURCESTATE_VALID) {
+		m_cur_vertex -= vertex_count; // Rewind vertices
+		return;
+	}
+
+	// Try to merge command with any previous command
+	if (drawable.m_primitive != SG_PRIMITIVETYPE_LINE_STRIP
+		&& drawable.m_primitive != SG_PRIMITIVETYPE_TRIANGLE_STRIP
+		&& _try_merge_command(draw)) {
+		return; // Succefully merged
+	}
+
+	BatchCommand *cmd = _next_command();
+	if (!cmd) {
+		m_cur_vertex -= vertex_count; // Rewind vertices
+		return;
+	}
+
+	std::memset(cmd, 0, sizeof(BatchCommand));
+	cmd->type = BatchCommandType::Draw;
+	cmd->args.draw = draw;
 }
 
-void RenderBatcher::end_frame() {
+void RenderBatcher::set_target(const Window& window) {
 	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
 
-	sg_end_pass();
-	m_cur_pass.in_pass = false;
+	m_state.framesize = window.get_size();
+	const ContextSettings& settings = window.get_context_settings();
 
-	if (!m_state_stack.empty()) {
-		m_state_stack = std::stack<BatchState>();
+	m_cur_pass.swapchain.width = m_state.framesize.w;
+	m_cur_pass.swapchain.height = m_state.framesize.h;
+	m_cur_pass.swapchain.sample_count = settings.samples;
+	m_cur_pass.swapchain.color_format = settings.pixel_format;
+	m_cur_pass.swapchain.depth_format = settings.depth_format;
+	m_cur_pass.attachments.id = SG_INVALID_ID;
 
-		m_cur_vertex = 0;
-		m_cur_command = 0;
-		m_cur_uniform = 0;
-	}
-}
-
-void RenderBatcher::begin(const View& view) {
-	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
-
-	if (m_state_stack.size() >= _MAX_STACK_DEPTH) {
-		vt::log::fatal("[GFX] | RenderBatcher > State stack overflow");
-		return; // [[noreturn]]
-	}
-
-	// Setup a new state
-	m_state_stack.push(m_state);
-
-	m_state.framesize = m_cur_pass.framesize;
+	m_state.view = View {};
 	m_state.proj = Matrix::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
-	m_state.view = view;
-	m_state.pipeline.id = SG_INVALID_ID;
-	m_state.uniform = UniformBuffer {};
-	m_state._base_vertex = m_cur_vertex;
-	m_state._base_command = m_cur_command;
-	m_state._base_uniform = m_cur_uniform;
-
-	// Reset viewport and scissor
 	apply_viewport(0.0, 0.0, m_state.framesize.w, m_state.framesize.h);
 	apply_scissor(0.0, 0.0, -1.0, -1.0);
 }
 
-void RenderBatcher::end() {
+void RenderBatcher::set_target(const sg_attachments& attachments) {
 	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
+	assert(attachments.id != SG_INVALID_ID);
 
-	if (m_state_stack.empty()) {
-		vt::log::fatal("[GFX] | RenderBatcher > State stack underflow");
-		return; // [[noreturn]]
+	m_cur_pass.attachments = attachments;
+	m_cur_pass.swapchain = sg_swapchain {};
+}
+
+void RenderBatcher::apply_view(const View& view) {
+	assert(m_is_valid);
+	m_state.view = view;
+}
+
+void RenderBatcher::apply_viewport(f32 x, f32 y, f32 w, f32 h) {
+	assert(m_is_valid);
+
+	Rect viewport { x, y, w, h };
+
+	// Skip if nothing has changed
+	if (m_state.viewport == viewport) {
+		return;
 	}
 
-	flush(); // Flush all pending drawings of current state
+	// Try to reuse previous command
+	auto *cmd = _prev_command(1);
+	if (!cmd || cmd->type != BatchCommandType::Viewport) {
+		cmd = _next_command();
+		if (!cmd) {
+			return;
+		}
+	}
 
-	m_state = m_state_stack.top();
-	m_state_stack.pop();
+	std::memset(cmd, 0, sizeof(BatchCommand));
+	cmd->type = BatchCommandType::Viewport;
+	cmd->args.viewport = viewport;
+
+	// Adjust state scissor offset relative to the new viewport
+	if (m_state.scissor.w > 0 && m_state.scissor.h > 0) {
+		m_state.scissor.x += viewport.x - m_state.viewport.x;
+		m_state.scissor.y += viewport.y - m_state.viewport.y;
+	}
+
+	m_state.viewport = viewport;
+
+	// Reset projection
+	m_state.proj = Matrix::ortho(0.0, viewport.w, viewport.h, 0.0);
+}
+
+void RenderBatcher::apply_scissor(f32 x, f32 y, f32 w, f32 h) {
+	assert(m_is_valid);
+
+	Rect scissor { x, y, w, h };
+
+	// Skip if nothing has changed
+	if (m_state.scissor == scissor) {
+		return;
+	}
+
+	// Try to reuse previous command
+	auto *cmd = _prev_command(1);
+	if (!cmd || cmd->type != BatchCommandType::Scissor) {
+		cmd = _next_command();
+		if (!cmd) {
+			return;
+		}
+	}
+
+	// Adjust scissor offset relative to the current viewport
+	scissor.x += m_state.viewport.x;
+	scissor.y += m_state.viewport.y;
+
+	// Reset scissor if invalid
+	if (w < 0.0 && h < 0.0) {
+		scissor = Rect { 0.0, 0.0, (f32)m_state.framesize.w, (f32)m_state.framesize.h };
+	}
+
+	std::memset(cmd, 0, sizeof(BatchCommand));
+	cmd->type = BatchCommandType::Scissor;
+	cmd->args.scissor = scissor;
+
+	m_state.scissor = scissor;
+}
+
+void RenderBatcher::reset() {
+	m_state.view = View {};
+	m_state.proj = Matrix::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
+	m_state.pipeline.id = SG_INVALID_ID;
+	m_state.uniform = UniformBuffer {};
+
+	apply_viewport(0.0, 0.0, m_state.framesize.w, m_state.framesize.h);
+	apply_scissor(0.0, 0.0, -1.0, -1.0);
 }
 
 void RenderBatcher::flush() {
 	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
-	assert(!m_state_stack.empty());
 
-	u32 end_vertex = m_cur_vertex;
-	u32 end_command = m_cur_command;
+	u32 vertex_count = m_cur_vertex;
+	u32 command_count = m_cur_command;
 
 	// Rewind indexes
-	m_cur_vertex = m_state._base_vertex;
-	m_cur_command = m_state._base_command;
-	m_cur_uniform = m_state._base_uniform;
+	m_cur_vertex = 0;
+	m_cur_command = 0;
+	m_cur_uniform = 0;
 
 	// Check if there's any command in this state
-	if (end_command <= m_cur_command) {
+	if (command_count == 0) {
 		return;
 	}
 
 	sg_range vertices_range = {
-		.ptr = &m_vertices[m_state._base_vertex],
-		.size = (end_vertex - m_state._base_vertex) * sizeof(Vertex),
+		.ptr = m_vertices.data(),
+		.size = vertex_count * sizeof(Vertex),
 	};
 	u32 offset = sg_append_buffer(m_vertex_buf, vertices_range);
 	if (sg_query_buffer_overflow(m_vertex_buf)) {
@@ -146,9 +256,8 @@ void RenderBatcher::flush() {
 	binds.vertex_buffers[0] = m_vertex_buf;
 	binds.vertex_buffer_offsets[0] = offset;
 
-	auto commands = std::span(
-		m_commands.begin() + m_state._base_command, end_command - m_cur_command
-	);
+	sg_begin_pass(m_cur_pass);
+	auto commands = std::span(m_commands.begin(), command_count);
 	for (const auto& cmd : commands) {
 		switch (cmd.type) {
 		case BatchCommandType::Viewport: {
@@ -217,161 +326,15 @@ void RenderBatcher::flush() {
 				}
 			}
 
-			sg_draw(draw.vertex_idx - m_state._base_vertex, draw.vertex_count, 1);
+			sg_draw(draw.vertex_idx, draw.vertex_count, 1);
 		} break;
 
 		case BatchCommandType::None: break; // Command was merged
 		}
 	}
-}
 
-void RenderBatcher::draw(const Drawable& drawable) {
-	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
-	assert(!m_state_stack.empty());
-
-	if (drawable.m_vertices.empty()) {
-		return;
-	}
-
-	u32 vertex_idx = m_cur_vertex;
-	u32 vertex_count = drawable.m_vertices.size();
-	auto vertices = _get_vertices(vertex_count);
-	if (vertices.empty()) {
-		return;
-	}
-
-	const Matrix& model = drawable.get_matrix();
-	const Matrix& view = m_state.view.get_matrix();
-	Matrix mvp = m_state.proj * view * model;
-
-	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
-
-	for (u32 i = 0; i < vertex_count; i += 1) {
-		const auto& vertex = drawable.m_vertices[i];
-
-		Vec3 position = mvp * vertex.position;
-		vertices[i].position = position;
-		vertices[i].color = vertex.color;
-		vertices[i].texcoord = vertex.texcoord;
-
-		// Update region area the rendering takes
-		region.x1 = std::min(region.x1, vertices[i].position.x);
-		region.y1 = std::min(region.y1, vertices[i].position.y);
-		region.x2 = std::max(region.x2, vertices[i].position.x);
-		region.y2 = std::max(region.y2, vertices[i].position.y);
-	}
-
-	DrawCommand draw;
-	draw.region = region;
-	draw.textures = drawable.m_textures;
-	draw.vertex_idx = vertex_idx;
-	draw.vertex_count = vertex_count;
-
-	// Override pipeline if state has set one
-	if (m_state.pipeline.id != SG_INVALID_ID) {
-		draw.pipeline = m_state.pipeline;
-		draw.uniform = m_state.uniform;
-	} else {
-		draw.pipeline = vt::make_pipeline(drawable.m_primitive);
-		draw.uniform = UniformBuffer {};
-	}
-
-	if (sg_query_pipeline_state(draw.pipeline) != SG_RESOURCESTATE_VALID) {
-		m_cur_vertex -= vertex_count; // Rewind vertices
-		return;
-	}
-
-	// Try to merge command with any previous command
-	if (drawable.m_primitive != SG_PRIMITIVETYPE_LINE_STRIP
-		&& drawable.m_primitive != SG_PRIMITIVETYPE_TRIANGLE_STRIP
-		&& _try_merge_command(draw)) {
-		return; // Succefully merged
-	}
-
-	BatchCommand *cmd = _next_command();
-	if (!cmd) {
-		m_cur_vertex -= vertex_count; // Rewind vertices
-		return;
-	}
-
-	std::memset(cmd, 0, sizeof(BatchCommand));
-	cmd->type = BatchCommandType::Draw;
-	cmd->args.draw = draw;
-}
-
-void RenderBatcher::apply_viewport(f32 x, f32 y, f32 w, f32 h) {
-	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
-	assert(!m_state_stack.empty());
-
-	Rect viewport { x, y, w, h };
-
-	// Skip if nothing has changed
-	if (m_state.viewport == viewport) {
-		return;
-	}
-
-	// Try to reuse previous command
-	auto *cmd = _prev_command(1);
-	if (!cmd || cmd->type != BatchCommandType::Viewport) {
-		cmd = _next_command();
-		if (!cmd) {
-			return;
-		}
-	}
-
-	std::memset(cmd, 0, sizeof(BatchCommand));
-	cmd->type = BatchCommandType::Viewport;
-	cmd->args.viewport = viewport;
-
-	// Adjust state scissor offset relative to the new viewport
-	if (m_state.scissor.w > 0 && m_state.scissor.h > 0) {
-		m_state.scissor.x += viewport.x - m_state.viewport.x;
-		m_state.scissor.y += viewport.y - m_state.viewport.y;
-	}
-
-	m_state.viewport = viewport;
-
-	// Reset projection
-	m_state.proj = Matrix::ortho(0.0, viewport.w, viewport.h, 0.0);
-}
-
-void RenderBatcher::apply_scissor(f32 x, f32 y, f32 w, f32 h) {
-	assert(m_is_valid);
-	assert(m_cur_pass.in_pass);
-	assert(!m_state_stack.empty());
-
-	Rect scissor { x, y, w, h };
-
-	// Skip if nothing has changed
-	if (m_state.scissor == scissor) {
-		return;
-	}
-
-	// Try to reuse previous command
-	auto *cmd = _prev_command(1);
-	if (!cmd || cmd->type != BatchCommandType::Scissor) {
-		cmd = _next_command();
-		if (!cmd) {
-			return;
-		}
-	}
-
-	// Adjust scissor offset relative to the current viewport
-	scissor.x += m_state.viewport.x;
-	scissor.y += m_state.viewport.y;
-
-	// Reset scissor if invalid
-	if (w < 0.0 && h < 0.0) {
-		scissor = Rect { 0.0, 0.0, (f32)m_state.framesize.w, (f32)m_state.framesize.h };
-	}
-
-	std::memset(cmd, 0, sizeof(BatchCommand));
-	cmd->type = BatchCommandType::Scissor;
-	cmd->args.scissor = scissor;
-
-	m_state.scissor = scissor;
+	sg_end_pass();
+	reset();
 }
 
 bool RenderBatcher::_try_merge_command(const RenderBatcher::DrawCommand& draw) {
@@ -554,7 +517,7 @@ RenderBatcher::BatchCommand *RenderBatcher::_next_command() {
 }
 
 RenderBatcher::BatchCommand *RenderBatcher::_prev_command(u32 depth) {
-	if ((m_cur_command - m_state._base_command) < depth) {
+	if (m_cur_command < depth) {
 		return nullptr;
 	}
 

@@ -1,8 +1,6 @@
 #ifndef _VT_GFX_RENDERBATCHER_HPP
 #define _VT_GFX_RENDERBATCHER_HPP
 
-#include "gfx/Color.hpp"
-#include "gfx/Drawable.hpp"
 #include "gfx/View.hpp"
 #include "gfx/common.hpp"
 #include "math/Matrix.hpp"
@@ -11,10 +9,12 @@
 
 #include <sokol/sokol_gfx.h>
 #include <span>
-#include <stack>
 #include <vector>
 
 namespace vt {
+
+class Window;
+class Drawable;
 
 struct UniformBuffer {
 	u32 offset;
@@ -34,11 +34,6 @@ struct BatchState {
 	sg_pipeline pipeline;
 	UniformBuffer uniform;
 
-private:
-	u32 _base_vertex;
-	u32 _base_command;
-	u32 _base_uniform;
-
 	friend class RenderBatcher;
 };
 
@@ -52,23 +47,18 @@ public:
 	bool init(u32 max_vertices = 0, u32 max_commands = 0);
 	void terminate();
 
-	// Render pass manipulation
-	void begin_frame(const sg_pass& pass);
-	void end_frame();
-
 	// Drawing state manipulation
-	void begin(const View& view);
-	void end();
-	void flush();
-
 	void draw(const Drawable& drawable);
 
-	void set_pipeline(sg_pipeline pip);
-	void set_uniform(i32 bindslot, const void *data, usize size);
+	void set_target(const Window& window);
+	void set_target(const sg_attachments& attachments);
 
-	// State view manipulation
+	void apply_view(const View& view);
 	void apply_viewport(f32 x, f32 y, f32 w, f32 h);
 	void apply_scissor(f32 x, f32 y, f32 w, f32 h);
+
+	void reset();
+	void flush();
 
 private:
 	enum {
@@ -104,13 +94,8 @@ private:
 		} args;
 	};
 
-	struct RenderPass {
-		bool in_pass = false;
-		Point framesize;
-	};
-
 	bool m_is_valid = false;
-	RenderPass m_cur_pass {};
+	sg_pass m_cur_pass {};
 	BatchState m_state {};
 	sg_buffer m_vertex_buf;
 
@@ -120,8 +105,6 @@ private:
 	std::vector<Vertex> m_vertices;
 	std::vector<BatchCommand> m_commands;
 	std::vector<u8> m_uniform_buffer;
-
-	std::stack<BatchState> m_state_stack;
 
 	bool _try_merge_command(const DrawCommand& draw);
 

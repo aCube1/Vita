@@ -43,8 +43,10 @@ struct [[nodiscard]] Vec2 {
 	};
 
 	Vec2() = default;
+
 	Vec2(f32 fill)
 		: x { fill }, y { fill } { }
+
 	Vec2(f32 x_, f32 y_)
 		: x { x_ }, y { y_ } { }
 

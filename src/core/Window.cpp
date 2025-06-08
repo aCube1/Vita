@@ -2,7 +2,7 @@
 
 #include "log.hpp"
 
-#include <cstring>
+#include <SDL3/SDL_events.h>
 #include <string>
 
 using namespace vt;
@@ -45,18 +45,10 @@ bool Window::create(i32 width, i32 height, const std::string& title) {
 
 	SDL_GL_MakeCurrent(m_handle, m_gl_context);
 
-	std::memset(&m_pass, 0, sizeof(sg_pass));
-	m_pass.swapchain.width = width;
-	m_pass.swapchain.height = height;
-	m_pass.swapchain.sample_count = m_settings.samples;
-	m_pass.swapchain.color_format = m_settings.pixel_format;
-	m_pass.swapchain.depth_format = m_settings.depth_format;
-	m_pass.attachments = { SG_INVALID_ID };
-	m_pass.action.colors[0] = {
-		.load_action = SG_LOADACTION_CLEAR,
-		.store_action = SG_STOREACTION_STORE,
-		.clear_value = { 0.2, 0.2, 0.2, 1.0 },
-	};
+	SDL_AddEventWatch(_event_watcher, this);
+
+	m_size.w = width;
+	m_size.h = height;
 
 	return true;
 }
@@ -80,10 +72,24 @@ void Window::present() {
 	SDL_GL_SwapWindow(m_handle);
 }
 
-[[nodiscard]] const sg_pass& Window::get_pass() const {
-	return m_pass;
+[[nodiscard]] const Vec2& Window::get_size() const {
+	return m_size;
 }
 
 [[nodiscard]] const ContextSettings& Window::get_context_settings() const {
 	return m_settings;
+}
+
+bool Window::_event_watcher(void *usrdata, SDL_Event *event) {
+	if (event->type < SDL_EVENT_WINDOW_FIRST || event->type > SDL_EVENT_WINDOW_LAST) {
+		return true;
+	}
+
+	if (event->type == SDL_EVENT_WINDOW_RESIZED) {
+		auto *window = (Window *)usrdata;
+		window->m_size.w = event->window.data1;
+		window->m_size.h = event->window.data2;
+	}
+
+	return false;
 }

@@ -6,6 +6,9 @@
 
 namespace vt {
 
+/**
+ * Holds a 2D camera
+ */
 class View {
 public:
 	View() = default;
@@ -24,7 +27,7 @@ public:
 	[[nodiscard]] f32 get_rotation() const;
 	[[nodiscard]] f32 get_zoom() const;
 
-	[[nodiscard]] const Matrix& get_matrix() const;
+	[[nodiscard]] const Matrix& get_transform() const;
 
 private:
 	Vec2 m_center;
@@ -33,6 +36,8 @@ private:
 
 	mutable Matrix m_transform;
 	mutable bool m_update_transform { true };
+
+	friend class RenderBatcher;
 };
 
 } // namespace vt

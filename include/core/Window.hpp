@@ -1,11 +1,14 @@
 #ifndef _VT_CORE_WINDOW_HPP
 #define _VT_CORE_WINDOW_HPP
 
-#include "gfx/Color.hpp"
+#include "math/Vec2.hpp"
 #include "types.hpp"
 
 #include <SDL3/SDL_video.h>
+#include <sokol/sokol_gfx.h>
 #include <string>
+
+union SDL_Event;
 
 namespace vt {
 
@@ -30,14 +33,16 @@ public:
 
 	void present();
 
-	[[nodiscard]] const sg_pass& get_pass() const;
+	[[nodiscard]] const Vec2& get_size() const;
 	[[nodiscard]] const ContextSettings& get_context_settings() const;
 
 private:
 	SDL_Window *m_handle { nullptr };
 	SDL_GLContext m_gl_context { nullptr };
 	ContextSettings m_settings;
-	sg_pass m_pass;
+	Vec2 m_size;
+
+	static bool _event_watcher(void *usrdata, SDL_Event *event);
 };
 
 } // namespace vt

@@ -1,5 +1,6 @@
 #include "Engine.hpp"
 
+#include "gfx/Drawable.hpp"
 #include "log.hpp"
 
 #include <SDL3/SDL_events.h>
@@ -55,7 +56,7 @@ Engine::Engine() {
 		return; // [[noreturn]]
 	}
 
-	m_is_running = true;
+	m_is_valid = true;
 }
 
 Engine::~Engine() {
@@ -66,20 +67,29 @@ Engine::~Engine() {
 	SDL_Quit();
 }
 
-void Engine::run_loop() {
-	while (m_is_running) {
+void Engine::run() {
+	assert(m_is_valid);
+	bool should_quit = false;
+
+	while (!should_quit) {
 		_do_update();
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT) {
-				m_is_running = false;
+				should_quit = true;
 			}
 		}
 	}
 }
 
 void Engine::_do_update() {
+	auto rect = Drawable::make_rect(DrawMode::ModeFill, 128, 128, 32, 32);
+
+	m_render.set_target(m_window);
+	m_render.draw(rect);
+
+	m_render.flush();
 	m_window.present();
 }
 

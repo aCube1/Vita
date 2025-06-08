@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	auto& engine = vt::Engine::get();
-	engine.run_loop();
+	engine.run();
 
 	return EXIT_SUCCESS;
 }

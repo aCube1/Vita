@@ -18,12 +18,12 @@ public:
 	Engine(const Engine&) = delete;
 	Engine& operator=(const Engine&) = delete;
 
-	void run_loop();
+	void run();
 
 private:
 	Window m_window;
 	RenderBatcher m_render;
-	bool m_is_running {};
+	bool m_is_valid {};
 
 	void _do_update();
 

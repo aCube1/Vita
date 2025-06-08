@@ -7,8 +7,6 @@
 #define SOKOL_EXTERNAL_GL_LOADER
 #include <sokol/sokol_gfx.h>
 
-using namespace vt;
-
 struct GfxResources {
 	sg_pipeline primitive_pips[_SG_PRIMITIVETYPE_NUM];
 	sg_shader common_shdr;
@@ -41,23 +39,23 @@ static const char _common_fs_source[] =
 	"    out_color = texture(u_tex0, f_uv) * f_color; \n"
 	"}";
 
-sg_pipeline_desc gfx::init_pipeline_desc(sg_primitive_type primitive, sg_shader shdr) {
+sg_pipeline_desc vt::init_pipeline_desc(sg_primitive_type primitive, sg_shader shdr) {
 	sg_pipeline_desc desc;
 	desc.shader = shdr;
-	desc.layout.buffers[0].stride = sizeof(gfx::Vertex);
-	desc.layout.attrs[(i32)gfx::VertexAttr::Pos] = {
+	desc.layout.buffers[0].stride = sizeof(vt::Vertex);
+	desc.layout.attrs[(i32)vt::VertexAttr::Pos] = {
 		.buffer_index = 0,
-		.offset = offsetof(gfx::Vertex, position),
+		.offset = offsetof(vt::Vertex, position),
 		.format = SG_VERTEXFORMAT_FLOAT3,
 	};
-	desc.layout.attrs[(i32)gfx::VertexAttr::UV] = {
+	desc.layout.attrs[(i32)vt::VertexAttr::UV] = {
 		.buffer_index = 0,
-		.offset = offsetof(gfx::Vertex, texcoord),
+		.offset = offsetof(vt::Vertex, texcoord),
 		.format = SG_VERTEXFORMAT_FLOAT2,
 	};
-	desc.layout.attrs[(i32)gfx::VertexAttr::Color] = {
+	desc.layout.attrs[(i32)vt::VertexAttr::Color] = {
 		.buffer_index = 0,
-		.offset = offsetof(gfx::Vertex, color),
+		.offset = offsetof(vt::Vertex, color),
 		.format = SG_VERTEXFORMAT_UBYTE4N,
 	};
 	desc.primitive_type = primitive;
@@ -66,15 +64,15 @@ sg_pipeline_desc gfx::init_pipeline_desc(sg_primitive_type primitive, sg_shader 
 	return desc;
 }
 
-sg_pipeline gfx::make_pipeline(sg_primitive_type primitive) {
+sg_pipeline vt::make_pipeline(sg_primitive_type primitive) {
 	u32 pip_idx = primitive;
 	if (_gfx.primitive_pips[pip_idx].id != SG_INVALID_ID) {
 		return _gfx.primitive_pips[pip_idx];
 	}
 
-	sg_shader shdr = gfx::make_common_shader();
+	sg_shader shdr = vt::make_common_shader();
 
-	sg_pipeline_desc pipdesc = gfx::init_pipeline_desc(primitive, shdr);
+	sg_pipeline_desc pipdesc = init_pipeline_desc(primitive, shdr);
 	sg_pipeline pip = sg_make_pipeline(&pipdesc);
 	if (sg_query_pipeline_state(pip) != SG_RESOURCESTATE_VALID) {
 		sg_destroy_pipeline(pip);
@@ -85,7 +83,7 @@ sg_pipeline gfx::make_pipeline(sg_primitive_type primitive) {
 	return pip;
 }
 
-sg_shader gfx::make_common_shader() {
+sg_shader vt::make_common_shader() {
 	if (sg_query_shader_state(_gfx.common_shdr) == SG_RESOURCESTATE_VALID) {
 		return _gfx.common_shdr;
 	}
@@ -95,9 +93,9 @@ sg_shader gfx::make_common_shader() {
 	desc.vertex_func.entry = "main";
 	desc.fragment_func.source = _common_fs_source;
 	desc.fragment_func.entry = "main";
-	desc.attrs[(i32)gfx::VertexAttr::Pos].glsl_name = "a_pos";
-	desc.attrs[(i32)gfx::VertexAttr::UV].glsl_name = "a_uv";
-	desc.attrs[(i32)gfx::VertexAttr::Color].glsl_name = "a_color";
+	desc.attrs[(i32)vt::VertexAttr::Pos].glsl_name = "a_pos";
+	desc.attrs[(i32)vt::VertexAttr::UV].glsl_name = "a_uv";
+	desc.attrs[(i32)vt::VertexAttr::Color].glsl_name = "a_color";
 	desc.images[0].stage = SG_SHADERSTAGE_FRAGMENT;
 	desc.images[0].image_type = SG_IMAGETYPE_2D;
 	desc.images[0].sample_type = SG_IMAGESAMPLETYPE_FLOAT;
@@ -119,7 +117,7 @@ sg_shader gfx::make_common_shader() {
 	return _gfx.common_shdr;
 }
 
-gfx::Texture gfx::make_common_texture() {
+vt::Texture vt::make_common_texture() {
 	if (sg_query_image_state(_gfx.white_img) != SG_RESOURCESTATE_VALID) {
 		u32 pixels[4] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
 
@@ -151,7 +149,7 @@ gfx::Texture gfx::make_common_texture() {
 		}
 	}
 
-	return gfx::Texture {
+	return vt::Texture {
 		.img = _gfx.white_img,
 		.smp = _gfx.nearest_smp,
 	};

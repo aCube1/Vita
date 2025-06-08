@@ -40,9 +40,10 @@ target_include_directories(
 )
 
 target_compile_definitions(
-	${PROJECT_NAME} PRIVATE
-		$<$<CXX_COMPILER_ID:GNU>:VT_COMPILER_GCC>
-		$<$<CXX_COMPILER_ID:Clang>:VT_COMPILER_CLANG>
+	${PROJECT_NAME}
+	PRIVATE
+		"$<$<CXX_COMPILER_ID:GNU>:-DVT_COMPILER_GCC=1>"
+		"$<$<CXX_COMPILER_ID:Clang>:-DVT_COMPILER_CLANG=1>"
 )
 
 setup_libraries(${PROJECT_NAME})
