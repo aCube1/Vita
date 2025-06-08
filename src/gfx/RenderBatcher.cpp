@@ -48,9 +48,9 @@ void RenderBatcher::draw(const Drawable& drawable) {
 		return;
 	}
 
-	const Matrix& model = drawable.get_matrix();
-	const Matrix& view = m_state.view.get_transform();
-	Matrix mvp = m_state.proj * view * model;
+	const Mat4& model = drawable.get_matrix();
+	const Mat4& view = m_state.view.get_transform();
+	Mat4 mvp = m_state.proj * view * model;
 
 	Rect region { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 
@@ -121,7 +121,7 @@ void RenderBatcher::set_target(const Window& window) {
 	m_cur_pass.attachments.id = SG_INVALID_ID;
 
 	m_state.view = View {};
-	m_state.proj = Matrix::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
+	m_state.proj = Mat4::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
 	apply_viewport(0.0, 0.0, m_state.framesize.w, m_state.framesize.h);
 	apply_scissor(0.0, 0.0, -1.0, -1.0);
 }
@@ -171,7 +171,7 @@ void RenderBatcher::apply_viewport(f32 x, f32 y, f32 w, f32 h) {
 	m_state.viewport = viewport;
 
 	// Reset projection
-	m_state.proj = Matrix::ortho(0.0, viewport.w, viewport.h, 0.0);
+	m_state.proj = Mat4::ortho(0.0, viewport.w, viewport.h, 0.0);
 }
 
 void RenderBatcher::apply_scissor(f32 x, f32 y, f32 w, f32 h) {
@@ -211,7 +211,7 @@ void RenderBatcher::apply_scissor(f32 x, f32 y, f32 w, f32 h) {
 
 void RenderBatcher::reset() {
 	m_state.view = View {};
-	m_state.proj = Matrix::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
+	m_state.proj = Mat4::ortho(0.0, m_state.framesize.w, m_state.framesize.h, 0.0);
 	m_state.pipeline.id = SG_INVALID_ID;
 	m_state.uniform = UniformBuffer {};
 

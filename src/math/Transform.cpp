@@ -61,7 +61,7 @@ void Transform::set_scale(const Vec2& scale) {
 	return m_scale;
 }
 
-[[nodiscard]] const vt::Matrix& Transform::get_matrix() const {
+[[nodiscard]] const vt::Mat4& Transform::get_matrix() const {
 	if (!m_update_transform) {
 		return m_transform;
 	}
@@ -74,7 +74,7 @@ void Transform::set_scale(const Vec2& scale) {
 	glm_scale(m, vec3 { m_scale.x, m_scale.y, 1.0 });
 	glm_translate(m, vec3 { -m_origin.x, -m_origin.y, 0.0 });
 
-	m_transform = Matrix { (f32 *)m };
+	m_transform = Mat4 { (f32 *)m };
 	m_update_transform = false;
 	return m_transform;
 }

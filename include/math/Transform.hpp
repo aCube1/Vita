@@ -1,7 +1,7 @@
 #ifndef _VT_MATH_TRANSFORM_HPP
 #define _VT_MATH_TRANSFORM_HPP
 
-#include "math/Matrix.hpp"
+#include "math/Mat4.hpp"
 #include "math/Vec3.hpp"
 
 namespace vt {
@@ -24,14 +24,15 @@ public:
 	[[nodiscard]] f32 get_rotation() const;
 	[[nodiscard]] const Vec2& get_scale() const;
 
-	[[nodiscard]] const Matrix& get_matrix() const;
+	[[nodiscard]] const Mat4& get_matrix() const;
 
 private:
 	Vec2 m_origin;
 	Vec3 m_position;
 	f32 m_rotation {};
 	Vec2 m_scale { 1.0, 1.0 };
-	mutable Matrix m_transform;
+
+	mutable Mat4 m_transform;
 	mutable bool m_update_transform { true };
 };
 

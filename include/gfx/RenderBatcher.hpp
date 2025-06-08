@@ -3,7 +3,7 @@
 
 #include "gfx/View.hpp"
 #include "gfx/common.hpp"
-#include "math/Matrix.hpp"
+#include "math/Mat4.hpp"
 #include "math/Rect.hpp"
 #include "math/Vec2i.hpp"
 
@@ -29,7 +29,7 @@ struct BatchState {
 	Point framesize;
 	Rect viewport;
 	Rect scissor;
-	Matrix proj;
+	Mat4 proj;
 	View view;
 	sg_pipeline pipeline;
 	UniformBuffer uniform;

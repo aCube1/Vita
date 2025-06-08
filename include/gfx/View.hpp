@@ -1,7 +1,7 @@
 #ifndef _VT_GFX_VIEW_HPP
 #define _VT_GFX_VIEW_HPP
 
-#include "math/Matrix.hpp"
+#include "math/Mat4.hpp"
 #include "math/Vec2.hpp"
 
 namespace vt {
@@ -27,14 +27,14 @@ public:
 	[[nodiscard]] f32 get_rotation() const;
 	[[nodiscard]] f32 get_zoom() const;
 
-	[[nodiscard]] const Matrix& get_transform() const;
+	[[nodiscard]] const Mat4& get_transform() const;
 
 private:
 	Vec2 m_center;
 	f32 m_rotation;
 	f32 m_zoom { 1.0 };
 
-	mutable Matrix m_transform;
+	mutable Mat4 m_transform;
 	mutable bool m_update_transform { true };
 
 	friend class RenderBatcher;

@@ -52,7 +52,7 @@ void View::set_zoom(f32 scale) {
 	return m_zoom;
 }
 
-[[nodiscard]] const Matrix& View::get_transform() const {
+[[nodiscard]] const Mat4& View::get_transform() const {
 	if (!m_update_transform) {
 		return m_transform;
 	}
@@ -64,7 +64,7 @@ void View::set_zoom(f32 scale) {
 	glm_scale_uni(m, m_zoom);
 	glm_translate(m, vec3 { -m_center.x, -m_center.y, 0.0 });
 
-	m_transform = Matrix { (f32 *)m };
+	m_transform = Mat4 { (f32 *)m };
 	m_update_transform = false;
 	return m_transform;
 }
