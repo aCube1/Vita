@@ -64,7 +64,7 @@ template <typename... Args>
 	send_message(
 		Level::Fatal, fmt.file, fmt.line, fmt.fmt, std::make_format_args(args...)
 	);
-	assert(false);
+	std::abort();
 }
 
 void send_message(
