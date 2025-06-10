@@ -1,8 +1,18 @@
 #ifndef _VT_UTILS_HPP
 #define _VT_UTILS_HPP
 
-#include <cstring>
 #include <type_traits>
+
+// Ignore nested anonymous structs
+#ifdef VT_COMPILER_GCC
+#	pragma GCC diagnostic push
+#	pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+#ifdef VT_COMPILER_CLANG
+#	pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#	pragma clang diagnostic ignored "-Wnested-anon-types"
+#endif
 
 #if defined(WIN32) || defined(_WIN32)
 #	define VT_PLATFORM_WINDOWS 1

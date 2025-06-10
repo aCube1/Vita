@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(
 	vitae
 	VERSION 0.1.0
-	LANGUAGES CXX
+	LANGUAGES C CXX
 )
 
 include("cmake/base.cmake")
@@ -12,12 +12,14 @@ include("cmake/warnings.cmake")
 add_executable(${PROJECT_NAME})
 
 target_compile_features(
-	${PROJECT_NAME} PRIVATE
+	${PROJECT_NAME}
+	PRIVATE
 		cxx_std_20
 )
 
 target_sources(
-	${PROJECT_NAME} PRIVATE
+	${PROJECT_NAME}
+	PRIVATE
 		"src/core/Window.cpp"
 		"src/gfx/Drawable.cpp"
 		"src/gfx/RenderBatcher.cpp"
@@ -35,7 +37,8 @@ target_sources(
 )
 
 target_include_directories(
-	${PROJECT_NAME} PRIVATE
+	${PROJECT_NAME}
+	PRIVATE
 		"${CMAKE_SOURCE_DIR}/include"
 )
 

@@ -40,7 +40,7 @@ static const char _common_fs_source[] =
 	"}";
 
 sg_pipeline_desc vt::init_pipeline_desc(sg_primitive_type primitive, sg_shader shdr) {
-	sg_pipeline_desc desc;
+	sg_pipeline_desc desc {};
 	desc.shader = shdr;
 	desc.layout.buffers[0].stride = sizeof(vt::Vertex);
 	desc.layout.attrs[(i32)vt::VertexAttr::Pos] = {
@@ -88,7 +88,7 @@ sg_shader vt::make_common_shader() {
 		return _gfx.common_shdr;
 	}
 
-	sg_shader_desc desc;
+	sg_shader_desc desc {};
 	desc.vertex_func.source = _common_vs_source;
 	desc.vertex_func.entry = "main";
 	desc.fragment_func.source = _common_fs_source;
@@ -121,7 +121,7 @@ vt::Texture vt::make_common_texture() {
 	if (sg_query_image_state(_gfx.white_img) != SG_RESOURCESTATE_VALID) {
 		u32 pixels[4] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
 
-		sg_image_desc desc;
+		sg_image_desc desc {};
 		desc.width = 2;
 		desc.height = 2;
 		desc.pixel_format = SG_PIXELFORMAT_RGBA8;
@@ -136,7 +136,7 @@ vt::Texture vt::make_common_texture() {
 	}
 
 	if (sg_query_sampler_state(_gfx.nearest_smp) != SG_RESOURCESTATE_VALID) {
-		sg_sampler_desc desc;
+		sg_sampler_desc desc {};
 		desc.min_filter = SG_FILTER_NEAREST;
 		desc.mag_filter = SG_FILTER_NEAREST;
 		desc.mipmap_filter = SG_FILTER_NEAREST;

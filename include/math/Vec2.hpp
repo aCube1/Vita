@@ -7,12 +7,6 @@
 #include <cglm/types.h>
 #include <cglm/vec2.h>
 
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
-
 namespace vt {
 
 struct [[nodiscard]] Vec2 {

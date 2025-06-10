@@ -3,12 +3,6 @@
 
 #include "math/Vec2.hpp"
 
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
-
 namespace vt {
 
 struct [[nodiscard]] Rect {
@@ -24,7 +18,8 @@ struct [[nodiscard]] Rect {
 	};
 
 	Rect() = default;
-	Rect(f32 x_, f32 y_, f32 w_, f32 h_) : x { x_ }, y { y_ }, w { w_ }, h { h_ } { }
+	Rect(f32 x_, f32 y_, f32 w_, f32 h_)
+		: x { x_ }, y { y_ }, w { w_ }, h { h_ } { }
 
 	f32 get_area() const;
 	Vec2 get_center() const;

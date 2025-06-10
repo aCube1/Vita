@@ -7,12 +7,6 @@
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
-
 namespace vt {
 
 struct [[nodiscard]] Vec3 {
@@ -36,9 +30,12 @@ struct [[nodiscard]] Vec3 {
 	};
 
 	Vec3() = default;
-	Vec3(f32 fill) : x { fill }, y { fill }, z { fill } { }
-	Vec3(f32 x_, f32 y_, f32 z_) : x { x_ }, y { y_ }, z { z_ } { }
-	Vec3(Vec2 vec, f32 z_ = 0.0) : x { vec.x }, y { vec.y }, z { z_ } { }
+	Vec3(f32 fill)
+		: x { fill }, y { fill }, z { fill } { }
+	Vec3(f32 x_, f32 y_, f32 z_)
+		: x { x_ }, y { y_ }, z { z_ } { }
+	Vec3(Vec2 vec, f32 z_ = 0.0)
+		: x { vec.x }, y { vec.y }, z { z_ } { }
 
 	Vec3(const f32 *v) {
 		raw[0] = v[0];

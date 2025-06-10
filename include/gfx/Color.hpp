@@ -2,14 +2,9 @@
 #define _VT_GFX_COLOR_HPP
 
 #include "types.hpp"
+#include "utils.hpp"
 
 #include <sokol/sokol_gfx.h>
-
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
 
 namespace vt {
 

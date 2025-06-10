@@ -8,12 +8,6 @@
 #include <cglm/ivec2.h>
 #include <cglm/types.h>
 
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
-
 namespace vt {
 
 struct [[nodiscard]] Vec2i {

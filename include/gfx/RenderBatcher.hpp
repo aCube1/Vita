@@ -61,13 +61,11 @@ public:
 	void flush();
 
 private:
-	enum {
-		_DEFAULT_MAX_VERTICES = 65536,
-		_DEFAULT_MAX_COMMANDS = 16384,
-		_MAX_MOVE_VERTICES = 512,
-		_MAX_STACK_DEPTH = 64,
-		_BATCH_MERGE_DEPTH = 8,
-	};
+	static constexpr i32 _DEFAULT_MAX_VERTICES = 65536;
+	static constexpr i32 _DEFAULT_MAX_COMMANDS = 16384;
+	static constexpr i32 _MAX_MOVE_VERTICES = 512;
+	static constexpr i32 _MAX_STACK_DEPTH = 64;
+	static constexpr i32 _BATCH_MERGE_DEPTH = 8;
 
 	enum BatchCommandType : u8 {
 		None = 0,

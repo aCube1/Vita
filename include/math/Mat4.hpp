@@ -3,15 +3,10 @@
 
 #include "math/Vec3.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 #include <cglm/mat4.h>
 #include <cglm/types.h>
-
-#ifdef VT_COMPILER_CLANG
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#	pragma clang diagnostic ignored "-Wnested-anon-types"
-#endif
 
 namespace vt {
 
@@ -39,7 +34,7 @@ struct [[nodiscard]] Mat4 {
 	Mat4 operator*(const Mat4& other) const;
 	Vec3 operator*(const Vec3& other) const;
 
-	constexpr Mat4& operator*=(const Mat4& other) {
+	Mat4& operator*=(const Mat4& other) {
 		glm_mat4_mul(raw, const_cast<vec4 *>(other.raw), raw);
 		return *this;
 	}

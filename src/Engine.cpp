@@ -72,25 +72,21 @@ void Engine::run() {
 	bool should_quit = false;
 
 	while (!should_quit) {
-		_do_update();
-
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT) {
 				should_quit = true;
 			}
 		}
+
+		auto rect = Drawable::make_rect(DrawMode::ModeFill, 128, 128, 32, 32);
+
+		m_render.set_target(m_window);
+		m_render.draw(rect);
+
+		m_render.flush();
+		m_window.present();
 	}
-}
-
-void Engine::_do_update() {
-	auto rect = Drawable::make_rect(DrawMode::ModeFill, 128, 128, 32, 32);
-
-	m_render.set_target(m_window);
-	m_render.draw(rect);
-
-	m_render.flush();
-	m_window.present();
 }
 
 bool Engine::_init_graphics_driver() {

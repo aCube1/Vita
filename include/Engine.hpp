@@ -25,8 +25,6 @@ private:
 	RenderBatcher m_render;
 	bool m_is_valid {};
 
-	void _do_update();
-
 	bool _init_graphics_driver();
 	void _terminate_graphics_driver();
 };

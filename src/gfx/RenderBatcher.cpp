@@ -12,7 +12,7 @@ bool RenderBatcher::init(u32 max_vertices, u32 max_commands) {
 	m_vertices.resize(max_vertices > 0 ? max_vertices : _DEFAULT_MAX_VERTICES);
 	m_commands.resize(max_commands > 0 ? max_commands : _DEFAULT_MAX_COMMANDS);
 
-	sg_buffer_desc bufdesc;
+	sg_buffer_desc bufdesc {};
 	bufdesc.size = m_vertices.capacity() * sizeof(Vertex);
 	bufdesc.type = SG_BUFFERTYPE_VERTEXBUFFER;
 	bufdesc.usage = SG_USAGE_STREAM;
