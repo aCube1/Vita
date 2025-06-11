@@ -14,8 +14,8 @@ bool RenderBatcher::init(u32 max_vertices, u32 max_commands) {
 
 	sg_buffer_desc bufdesc {};
 	bufdesc.size = m_vertices.capacity() * sizeof(Vertex);
-	bufdesc.type = SG_BUFFERTYPE_VERTEXBUFFER;
-	bufdesc.usage = SG_USAGE_STREAM;
+	bufdesc.usage.vertex_buffer = true;
+	bufdesc.usage.stream_update = true;
 	bufdesc.label = "vt_render_batcher.vertex_buffer";
 
 	m_vertex_buf = sg_make_buffer(bufdesc);

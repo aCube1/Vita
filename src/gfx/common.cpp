@@ -124,6 +124,7 @@ vt::Texture vt::make_common_texture() {
 		sg_image_desc desc {};
 		desc.width = 2;
 		desc.height = 2;
+		desc.usage.immutable = true;
 		desc.pixel_format = SG_PIXELFORMAT_RGBA8;
 		desc.data.subimage[0][0] = SG_RANGE(pixels);
 		desc.label = "vt_gfx_resources.white_image";
