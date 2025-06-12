@@ -1,6 +1,6 @@
 #include "gfx/View.hpp"
 
-#include <cglm/affine.h>
+#include <cglm/affine2d.h>
 
 using namespace vt;
 
@@ -58,13 +58,19 @@ void View::set_zoom(f32 scale) {
 	}
 
 	// Transformation: O * R * S * (-O) -> M
-	mat4 m = GLM_MAT4_IDENTITY_INIT;
-	glm_translate(m, vec3 { m_center.x, m_center.y, 0.0 });
-	glm_rotate_z(m, m_rotation, m);
-	glm_scale_uni(m, m_zoom);
-	glm_translate(m, vec3 { -m_center.x, -m_center.y, 0.0 });
+	mat3 m = GLM_MAT3_IDENTITY_INIT;
 
-	m_transform = Mat4 { (f32 *)m };
+	auto center = m_center;
+	glm_translate2d(m, center.raw);
+	glm_rotate2d(m, m_rotation);
+	glm_scale2d_uni(m, m_zoom);
+
+	center = -m_center;
+	glm_translate2d(m, center.raw);
+
+	m_transform = Mat4 {};
+	glm_mat4_ins3(m, m_transform.raw);
+
 	m_update_transform = false;
 	return m_transform;
 }

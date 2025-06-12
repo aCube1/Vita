@@ -1,6 +1,6 @@
 #include "math/Transform.hpp"
 
-#include "cglm/affine.h"
+#include "cglm/affine2d.h"
 
 using namespace vt;
 
@@ -66,15 +66,23 @@ void Transform::set_scale(const Vec2& scale) {
 		return m_transform;
 	}
 
-	// Transformation: T * O * R * S * (-O) -> M
-	mat4 m = GLM_MAT4_IDENTITY_INIT;
-	glm_translate(m, (f32 *)m_position.raw);
-	glm_translate(m, vec3 { m_origin.x, m_origin.y, 0.0 });
-	glm_rotate_z(m, m_rotation, m);
-	glm_scale(m, vec3 { m_scale.x, m_scale.y, 1.0 });
-	glm_translate(m, vec3 { -m_origin.x, -m_origin.y, 0.0 });
+	Vec2 position { m_position.x, m_position.y };
+	auto origin = -m_origin;
+	auto scale = m_scale;
 
-	m_transform = Mat4 { (f32 *)m };
+	// Transformation: T * O * R * S * (-O) -> M
+	mat3 m = GLM_MAT3_IDENTITY_INIT;
+	glm_translate2d(m, position.raw);
+	glm_translate2d(m, origin.raw);
+	glm_rotate2d(m, m_rotation);
+	glm_scale2d(m, scale.raw);
+
+	origin = -m_origin;
+	glm_translate2d(m, origin.raw);
+
+	m_transform = Mat4 {};
+	glm_mat4_ins3(m, m_transform.raw);
+
 	m_update_transform = false;
 	return m_transform;
 }
