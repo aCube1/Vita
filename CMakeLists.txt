@@ -5,6 +5,8 @@ project(
 	LANGUAGES C CXX
 )
 
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors." ON)
+
 include("cmake/base.cmake")
 include("cmake/libraries.cmake")
 include("cmake/warnings.cmake")
